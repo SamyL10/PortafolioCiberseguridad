@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcial 1 // Portafolio de Seguridad Informática</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { cpYellow: '#FCEE0A', cpCyan: '#00F0FF', cpPink: '#FF003C', cpGray: 'rgba(24, 24, 27, 0.85)' },
+                    fontFamily: { cyber: ['Rajdhani', 'sans-serif'], mono: ['Fira Code', 'monospace'] },
+                    boxShadow: { 'neon-red': '0 0 10px #FF003C, 0 0 40px #FF003C' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050000; overflow-x: hidden; }
+        #matrix-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; opacity: 0.35; }
+        .css-red-glow { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150vw; height: 150vh; z-index: -1; background: radial-gradient(circle, rgba(255,0,60,0.15) 0%, rgba(5,0,0,1) 60%); pointer-events: none; }
+        .scanlines { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; pointer-events: none; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; }
+        .glitch-hover:hover { text-shadow: 3px 0 #FF003C, -3px 0 #00F0FF; transition: all 0.1s ease-in-out; }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="css-red-glow"></div>
+    <div class="scanlines"></div>
+
+    <!-- Encabezado -->
+    <header class="bg-cpYellow text-black border-b-4 border-cpPink p-6 uppercase font-cyber relative overflow-hidden shadow-neon-red">
+        <div class="max-w-4xl mx-auto relative z-10 flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-bold tracking-wider glitch-hover">DIRECTORIO: PARCIAL 1</h1>
+                <p class="text-xl font-bold tracking-widest mt-1">>_ ACCESO AUTORIZADO</p>
+            </div>
+            <!-- Botón de regreso -->
+            <a href="index.html" class="bg-black text-cpYellow border border-black hover:border-cpPink hover:text-cpPink py-2 px-4 font-bold transition-all duration-300">
+                [ REGRESAR AL INICIO ]
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto mt-10 mb-10 p-4 space-y-8 relative z-10 flex-grow">
+        
+        <h2 class="text-3xl font-cyber font-bold text-cpCyan uppercase flex items-center gap-2 mb-6">
+            <span class="text-white">></span> Base de Datos de Actividades
+        </h2>
+
+
+        <a href="index.html" class="block bg-black/80 border-l-4 border-cpCyan hover:border-cpPink p-6 transition-all duration-300 shadow-lg backdrop-blur-md group">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-cpYellow font-bold text-xl mb-2 group-hover:text-cpPink transition-colors">Act.02 Aqui Empieza mi portafolio</h3>
+                    <p class="text-gray-400 text-sm mb-4">Creación de la pagina que servira como portafolio para llevar seguimiento de las actividades realizadas durante la materia.</p>
+                </div>
+                <span class="bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Log_03</span>
+            </div>
+            <span class="inline-block border border-cpCyan text-cpCyan font-bold px-3 py-1 uppercase text-xs group-hover:border-cpPink group-hover:text-cpPink transition-colors">> Ejecutar_Reporte()</span>
+        </a>
+        <!-- TARJETA: ACTIVIDAD 03 -->
+        <a href="Actividad3.html" class="block bg-black/80 border-l-4 border-cpCyan hover:border-cpPink p-6 transition-all duration-300 shadow-lg backdrop-blur-md group">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-cpYellow font-bold text-xl mb-2 group-hover:text-cpPink transition-colors">Act. 03 – No presiones esc... todavía</h3>
+                    <p class="text-gray-400 text-sm mb-4">Implementación y Análisis de un Keylogger.</p>
+                </div>
+                <span class="bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Log_03</span>
+            </div>
+            <span class="inline-block border border-cpCyan text-cpCyan font-bold px-3 py-1 uppercase text-xs group-hover:border-cpPink group-hover:text-cpPink transition-colors">> Ejecutar_Reporte()</span>
+        </a>
+
+        <!-- TARJETA: ACTIVIDAD PENDIENTE  -->
+        <div class="block bg-black/50 border-l-4 border-gray-700 p-6 shadow-lg backdrop-blur-md opacity-60">
+            <h3 class="text-gray-500 font-bold text-xl mb-2">Actividad 04 – [ ENCRIPTADO ]</h3>
+            <p class="text-gray-600 text-sm mb-4">Datos pendientes de carga en el sistema...</p>
+            <span class="inline-block border border-gray-600 text-gray-600 font-bold px-3 py-1 uppercase text-xs">> Acceso_Denegado</span>
+        </div>
+
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-cpPink/50 w-full">
+        <p>&copy; 2026 Samuel López Gómez. All rights reserved.</p>
+    </footer>
+
+    <!-- Script Matrix -->
+    <script>
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ".split('');
+        const fontSize = 16; const columns = canvas.width / fontSize; const drops = [];
+        for (let x = 0; x < columns; x++) drops[x] = Math.random() * -100;
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#FF003C'; ctx.font = fontSize + 'px "Fira Code", monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

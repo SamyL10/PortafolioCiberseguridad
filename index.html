@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>smrunner // Portafolio de Seguridad Informática</title>
+    
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS por CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cpYellow: '#FCEE0A',
+                        cpCyan: '#00F0FF',
+                        cpPink: '#FF003C',
+                        cpDark: '#050000',
+                        cpGray: 'rgba(24, 24, 27, 0.85)'
+                    },
+                    fontFamily: {
+                        cyber: ['Rajdhani', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 10px #00F0FF, 0 0 20px #00F0FF',
+                        'neon-red': '0 0 10px #FF003C, 0 0 40px #FF003C',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Quitamos el pb-10 del body y lo manejamos con flexbox */
+        body {
+            background-color: #050000;
+            overflow-x: hidden;
+        }
+
+        /* Lienzo para la lluvia de datos JS */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            opacity: 0.35;
+        }
+
+        /* Resplandor rojo central intermitente */
+        .css-red-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150vw;
+            height: 150vh;
+            z-index: -1;
+            background: radial-gradient(circle, rgba(255,0,60,0.15) 0%, rgba(5,0,0,1) 60%);
+            animation: systemFlicker 4s infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes systemFlicker {
+            0%, 100% { opacity: 1; }
+            33% { opacity: 0.6; }
+            34% { opacity: 0.9; }
+            35% { opacity: 0.2; }
+            36% { opacity: 0.8; }
+            60% { opacity: 1; }
+            90% { opacity: 0.8; }
+        }
+
+        .glitch-hover:hover {
+            text-shadow: 3px 0 #FF003C, -3px 0 #00F0FF;
+            transition: all 0.1s ease-in-out;
+        }
+        
+        /* Scanlines */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+        }
+    </style>
+</head>
+<!-- Agregamos flex y flex-col al body para que controle toda la altura -->
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <!-- Capas de fondo animado -->
+    <canvas id="matrix-bg"></canvas>
+    <div class="css-red-glow"></div>
+    <div class="scanlines"></div>
+
+    <!-- 1. Encabezado (Header) -->
+    <header class="bg-cpYellow text-black border-b-4 border-cpPink p-6 uppercase font-cyber relative overflow-hidden shadow-neon-red">
+        <div class="max-w-4xl mx-auto relative z-10">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-wider glitch-hover">Samuel López Gómez</h1>
+            <p class="text-xl font-bold tracking-widest mt-1 mb-2">>_ ALIAS: smrunner</p>
+            
+            <div class="text-sm md:text-base font-semibold">
+                <p><span class="text-cpPink font-bold">ASIGNATURA:</span> CNO IV – Seguridad Informática</p>
+                <p>Universidad Politécnica de San Luis Potosí <span class="text-cpPink font-bold mx-2">|</span> PERIODO: Agosto - Diciembre 2026</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Menú de navegación -->
+    <nav class="bg-black/90 backdrop-blur-md border-b border-cpPink/50 sticky top-0 z-50">
+        <ul class="max-w-4xl mx-auto flex flex-wrap justify-center gap-4 md:gap-8 p-4 font-cyber text-base md:text-lg uppercase tracking-widest">
+            <li><a href="#inicio" class="text-cpCyan hover:text-cpPink hover:shadow-neon-red transition-all duration-300">[ INICIO ]</a></li>
+            <li><a href="Parcial1.html" class="text-cpCyan hover:text-cpPink hover:shadow-neon-red transition-all duration-300">[ PARCIAL 1 ]</a></li>
+            <li><a href="#parcial2" class="text-gray-500 hover:text-cpPink transition-all duration-300">[ PARCIAL 2 ]</a></li>
+            <li><a href="#parcial3" class="text-gray-500 hover:text-cpPink transition-all duration-300">[ PARCIAL 3 ]</a></li>
+            <li><a href="#contacto" class="text-cpCyan hover:text-cpPink hover:shadow-neon-red transition-all duration-300">[ CONTACTO ]</a></li>
+        </ul>
+    </nav>
+
+    <!-- Agregamos w-full y flex-grow al main para que ocupe todo el espacio sobrante -->
+    <main class="max-w-4xl w-full mx-auto mt-10 mb-10 p-4 space-y-12 relative z-10 scroll-mt-28 flex-grow" id="inicio">
+        
+        <!-- 2. Presentación -->
+        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
+            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Sys_Info</div>
+            <h2 class="text-3xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                <span class="text-white group-hover:text-cpPink transition-colors">></span> Presentación del Portafolio
+            </h2>
+            <div class="space-y-4 text-sm md:text-base leading-relaxed">
+                <p>Este portafolio digital funciona como el contenedor oficial de evidencias del curso <strong class="text-cpYellow">CNO IV - Seguridad Informática</strong>. Este sitio web tiene como propósito documentar y presentar de manera estructurada todos los aprendizajes, prácticas y certificaciones desarrollados a lo largo de la materia.</p>
+                <p>El enfoque principal del curso se centra en los pilares de la <strong class="text-cpYellow">seguridad informática</strong>, la ejecución de pruebas de penetración y el análisis exhaustivo de vulnerabilidades.</p>
+                <p>Este portafolio es fundamental ya que me permitirá evaluar mi propio avance a lo largo del semestre, además de servir como una evidencia centralizada de los conocimientos técnicos adquiridos durante el curso.</p>
+            </div>
+        </section>
+
+        <!-- 3. Perfil -->
+        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
+            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">User_Profile</div>
+            <h2 class="text-3xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                <span class="text-white group-hover:text-cpPink transition-colors">></span> Perfil del Estudiante
+            </h2>
+            <div class="space-y-3 text-sm md:text-base">
+                <p>Estudiante entusiasta de Ingeniería en Tecnologías de Información, dispuesto a aprender y adaptarse a los retos de nuevas tecnologías con experiencia práctica en despliegue de infraestructuras de red en entornos Linux y desarrollo de herramientas mediante lenguajes como Python, Java, C y Go.</p>
+                <p><strong class="text-cpPink">Intereses:</strong> Análisis de Datos, Networking, Ciberseguridad.</p>
+            </div>
+        </section>
+
+        <!-- 4. Stack -->
+        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
+            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Stack_Tech</div>
+            <h2 class="text-3xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                <span class="text-white group-hover:text-cpPink transition-colors">></span>Información Técnica del Sitio
+            </h2>
+            <ul class="text-sm md:text-base space-y-3">
+                <li><span class="text-cpYellow font-bold">LENGUAJES & HERRAMIENTAS:</span> HTML5, Tailwind CSS, CSS3, JavaScript.</li>
+                <li><span class="text-cpYellow font-bold">HOSTING:</span> GitHub Pages.</li>
+                <li><span class="text-cpYellow font-bold">VERSIONING:</span> Git CLI & Repositorios de GitHub.</li>
+            </ul>
+        </section>
+
+        <!-- 5. Formulario -->
+        <section id="contacto" class="bg-cpPink p-1 shadow-neon-red scroll-mt-28">
+            <div class="bg-black/90 p-6 backdrop-blur-md">
+                <h2 class="text-3xl font-cyber font-bold text-white mb-6 uppercase flex items-center gap-2">
+                    <span class="text-cpPink">></span> Contactame
+                </h2>
+                
+                <form action="https://formsubmit.co/samlogo1000@gmail.com" method="POST" class="space-y-4 font-cyber text-lg tracking-wide">
+                    <input type="hidden" name="_autoresponse" value="CONEXIÓN ESTABLECIDA. He recibido tu mensaje en mi terminal. Responderé tu ping pronto. - Sam.">
+                    
+                    <div>
+                        <label class="block text-cpPink mb-1 uppercase">Nombre:</label>
+                        <input type="text" name="nombre" required class="w-full bg-gray-900 border border-gray-700 focus:border-cpPink focus:outline-none focus:ring-1 focus:ring-cpPink text-white px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-cpPink mb-1 uppercase">Correo:</label>
+                        <input type="email" name="email" required class="w-full bg-gray-900 border border-gray-700 focus:border-cpPink focus:outline-none focus:ring-1 focus:ring-cpPink text-white px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-cpPink mb-1 uppercase">Mensaje:</label>
+                        <textarea name="mensaje" rows="3" required class="w-full bg-gray-900 border border-gray-700 focus:border-cpPink focus:outline-none focus:ring-1 focus:ring-cpPink text-white px-4 py-2"></textarea>
+                    </div>
+                    <button type="submit" class="bg-transparent border-2 border-cpPink text-cpPink font-bold py-2 px-8 uppercase hover:bg-cpPink hover:text-white hover:shadow-neon-red transition-all duration-300 w-full">
+                        EJECUTAR_ENVÍO()
+                    </button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- 6. Pie de página -->
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-cpPink/50 w-full">
+        <p>V.1.0.0 // &copy; 2026 Samuel López Gómez. All rights reserved.</p>
+        <p class="mt-2 text-cpPink drop-shadow-[0_0_5px_rgba(255,0,60,0.8)]">Encriptación Activa // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- SCRIPT PARA EL FONDO ANIMADO DE DATOS (MATRIX CYBERPUNK) -->
+    <script>
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const characters = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
+        const charArray = characters.split('');
+        
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) {
+            drops[x] = Math.random() * -100;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#FF003C';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 33);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>

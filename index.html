@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>smrunner // Portafolio de Seguridad Informática</title>
+    <title>smrunner // ctOS Database Access</title>
     
-    <!-- Fuentes de Google -->
+    <!-- Fuentes de Google: Fira Code (Terminal) y Orbitron (Estilo Watch_Dogs) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS por CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,19 +17,13 @@
             theme: {
                 extend: {
                     colors: {
-                        cpYellow: '#FCEE0A',
-                        cpCyan: '#00F0FF',
-                        cpPink: '#FF003C',
-                        cpDark: '#050000',
-                        cpGray: 'rgba(24, 24, 27, 0.85)'
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
                     },
                     fontFamily: {
-                        cyber: ['Rajdhani', 'sans-serif'],
+                        cyber: ['Orbitron', 'sans-serif'],
                         mono: ['Fira Code', 'monospace']
-                    },
-                    boxShadow: {
-                        'neon-cyan': '0 0 10px #00F0FF, 0 0 20px #00F0FF',
-                        'neon-red': '0 0 10px #FF003C, 0 0 40px #FF003C',
                     }
                 }
             }
@@ -37,8 +31,9 @@
     </script>
     <style>
         body {
-            background-color: #050000;
+            background-color: #050505;
             overflow-x: hidden;
+            cursor: crosshair;
         }
 
         #matrix-bg {
@@ -48,37 +43,20 @@
             width: 100vw;
             height: 100vh;
             z-index: -2;
-            opacity: 0.35;
+            opacity: 0.25;
         }
 
-        .css-red-glow {
+        .vignette {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 150vw;
-            height: 150vh;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
             z-index: -1;
-            background: radial-gradient(circle, rgba(255,0,60,0.15) 0%, rgba(5,0,0,1) 60%);
-            animation: systemFlicker 4s infinite alternate;
             pointer-events: none;
         }
 
-        @keyframes systemFlicker {
-            0%, 100% { opacity: 1; }
-            33% { opacity: 0.6; }
-            34% { opacity: 0.9; }
-            35% { opacity: 0.2; }
-            36% { opacity: 0.8; }
-            60% { opacity: 1; }
-            90% { opacity: 0.8; }
-        }
-
-        .glitch-hover:hover {
-            text-shadow: 3px 0 #FF003C, -3px 0 #00F0FF;
-            transition: all 0.1s ease-in-out;
-        }
-        
         .scanlines {
             position: fixed;
             top: 0;
@@ -87,138 +65,297 @@
             height: 100vh;
             z-index: 9999;
             pointer-events: none;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
             background-size: 100% 4px;
+        }
+
+        .hud-corners {
+            position: relative;
+        }
+        .hud-corners::before, .hud-corners::after {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: #00a8ff;
+            border-style: solid;
+        }
+        .hud-corners::before {
+            top: -1px; left: -1px;
+            border-width: 2px 0 0 2px;
+        }
+        .hud-corners::after {
+            bottom: -1px; right: -1px;
+            border-width: 0 2px 2px 0;
+        }
+
+        /* Pantalla de carga de ctOS */
+        #ctos-boot {
+            transition: opacity 0.5s ease-out;
         }
     </style>
 </head>
 <body class="font-mono text-gray-300 min-h-screen flex flex-col">
 
+    <!-- PANTALLA DE ARRANQUE ctOS -->
+    <div id="ctos-boot" class="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center">
+        <div class="text-ctosBlue font-cyber text-2xl md:text-4xl font-bold tracking-widest animate-pulse mb-4">
+            CONECTANDO A RED ctOS...
+        </div>
+        <div class="text-white font-mono text-xs md:text-sm tracking-widest text-center">
+            > BYPASS_FIREWALL [OK]<br>
+            > FETCHING_CITIZEN_DATA [OK]
+        </div>
+    </div>
+
     <!-- Capas de fondo animado -->
     <canvas id="matrix-bg"></canvas>
-    <div class="css-red-glow"></div>
+    <div class="vignette"></div>
     <div class="scanlines"></div>
+    
+    <!-- Indicador de cámara superior -->
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
 
-    <!-- 1. Encabezado (Header) -->
-    <header class="bg-cpYellow text-black border-b-4 border-cpPink p-6 uppercase font-cyber relative overflow-hidden shadow-neon-red">
-        <div class="max-w-4xl mx-auto relative z-10">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-wider glitch-hover">Samuel López Gómez</h1>
-            <p class="text-xl font-bold tracking-widest mt-1 mb-2">>_ ALIAS: smrunner</p>
-            
-            <div class="text-sm md:text-base font-semibold">
-                <p><span class="text-cpPink font-bold">ASIGNATURA:</span> CNO IV – Seguridad Informática</p>
-                <p>Universidad Politécnica de San Luis Potosí <span class="text-cpPink font-bold mx-2">|</span> PERIODO: Agosto - Diciembre 2026</p>
+    <!-- 1. ENCABEZADO ORDENADO CON LOGO ESCUDO REACTIVO Y ALIAS REUBICADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full overflow-hidden group">
+        <div class="max-w-[1400px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <!-- Izquierda: Logo + Identidad + Telemetría -->
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                
+                <!-- Logo Escudo / Zorro ctOS Reactivo -->
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+
+                <!-- Info de texto -->
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">
+                            SYS_ACTIVE
+                        </div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">
+                            SAMUEL LÓPEZ GÓMEZ
+                        </h1>
+                    </div>
+                    <!-- Información Recuperada con ALIAS estilizado en Orbitron -->
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
             </div>
+
+            <!-- Derecha: Menú de navegación alineado -->
+            <nav class="flex flex-nowrap items-center justify-center xl:justify-end gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto overflow-x-auto whitespace-nowrap pb-1 xl:pb-0">
+                <a href="#inicio" class="text-white hover:text-ctosBlue transition-colors">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors">> PARCIAL_1</a>
+                <a href="#parcial2" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="#parcial3" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="#certificaciones" class="text-gray-400 hover:text-ctosBlue transition-colors">> CERTIFICACIONES</a>
+                <a href="#contacto" class="text-ctosBlue hover:text-white transition-colors">> CONTACTO</a>
+            </nav>
+            
         </div>
     </header>
 
-    <!-- Menú de navegación -->
-    <nav class="bg-black/90 backdrop-blur-md border-b border-cpPink/50 sticky top-0 z-50">
-        <ul class="max-w-4xl mx-auto flex flex-wrap justify-center gap-4 md:gap-8 p-4 font-cyber text-base md:text-lg uppercase tracking-widest">
-            <li><a href="#inicio" class="text-cpCyan hover:text-cpPink hover:shadow-neon-red transition-all duration-300">[ INICIO ]</a></li>
-            <li><a href="Parcial1.html" class="text-cpCyan hover:text-cpPink hover:shadow-neon-red transition-all duration-300">[ PARCIAL 1 ]</a></li>
-            <li><a href="#parcial2" class="text-gray-500 hover:text-cpPink transition-all duration-300">[ PARCIAL 2 ]</a></li>
-            <li><a href="#parcial3" class="text-gray-500 hover:text-cpPink transition-all duration-300">[ PARCIAL 3 ]</a></li>
-            <li><a href="#contacto" class="text-cpCyan hover:text-cpPink hover:shadow-neon-red transition-all duration-300">[ CONTACTO ]</a></li>
-        </ul>
-    </nav>
-
-    <!-- Contenedor Principal: Estructura de Documento Continuo -->
-    <main class="max-w-5xl w-full mx-auto mt-10 mb-10 p-6 md:p-10 relative z-10 scroll-mt-28 flex-grow bg-black/85 backdrop-blur-md border border-gray-800" id="inicio">
+    <!-- Contenedor Principal (Dashboard Grid) -->
+    <main class="max-w-6xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow" id="inicio">
         
-        <!-- 2. Presentación -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-gray-800">
-            <div class="md:col-span-4">
-                <h2 class="text-2xl font-cyber font-bold text-cpCyan uppercase tracking-widest">Presentación del Portafolio</h2>
-            </div>
-            <div class="md:col-span-8 space-y-4 text-sm md:text-base leading-relaxed">
-                <p>Este portafolio digital funciona como el contenedor oficial de evidencias del curso <strong class="text-cpYellow">CNO IV - Seguridad Informática</strong>. Este sitio web tiene como propósito documentar y presentar de manera estructurada todos los aprendizajes, prácticas y certificaciones desarrollados a lo largo de la materia.</p>
-                <p>El enfoque principal del curso se centra en los pilares de la <strong class="text-cpYellow">seguridad informática</strong>, la ejecución de pruebas de penetración y el análisis exhaustivo de vulnerabilidades.</p>
-                <p>Este portafolio es fundamental ya que me permitirá evaluar mi propio avance a lo largo del semestre, además de servir como una evidencia centralizada de los conocimientos técnicos adquiridos durante el curso.</p>
-            </div>
-        </div>
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 hud-corners shadow-2xl flex flex-col gap-10">
+            
+            <!-- 2. Presentación (Ancho Completo - Con Badge Esquina Superior Derecha) -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group">
+                <!-- Adorno / Badge en la esquina superior derecha con animación -->
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    DATABASE_ENTRY_01
+                </div>
 
-        <!-- 3. Perfil -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-gray-800">
-            <div class="md:col-span-4">
-                <h2 class="text-2xl font-cyber font-bold text-cpCyan uppercase tracking-widest">Perfil del Estudiante</h2>
-            </div>
-            <div class="md:col-span-8 space-y-3 text-sm md:text-base">
-                <p>Estudiante entusiasta de Ingeniería en Tecnologías de Información, dispuesto a aprender y adaptarse a los retos de nuevas tecnologías con experiencia práctica en despliegue de infraestructuras de red en entornos Linux y desarrollo de herramientas mediante lenguajes como Python, Java, C y Go.</p>
-                <p><strong class="text-cpPink">Intereses:</strong> Análisis de Datos, Networking, Ciberseguridad.</p>
-            </div>
-        </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-36 md:pr-48">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                    <h2 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">Presentación del Portafolio</h2>
+                </div>
+                
+                <div class="space-y-6 text-sm md:text-base leading-relaxed text-gray-300 font-mono">
+                    <div class="flex flex-col md:flex-row gap-2 md:gap-6 items-start">
+                        <span class="text-ctosBlue font-bold uppercase tracking-widest w-40 flex-shrink-0 whitespace-nowrap">[ OBJETIVO ]</span>
+                        <p>Este portafolio digital funciona como el contenedor oficial de evidencias del curso <strong class="text-white">CNO IV - Seguridad Informática</strong>. Este sitio web tiene como propósito documentar y presentar de manera estructurada todos los aprendizajes, prácticas y certificaciones desarrollados a lo largo de la materia.</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-2 md:gap-6 items-start">
+                        <span class="text-ctosBlue font-bold uppercase tracking-widest w-40 flex-shrink-0 whitespace-nowrap">[ ENFOQUE ]</span>
+                        <p>El enfoque principal del curso se centra en los pilares de la <strong class="text-white">seguridad informática</strong>, la ejecución de pruebas de penetración y el análisis exhaustivo de vulnerabilidades.</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-2 md:gap-6 items-start">
+                        <span class="text-ctosBlue font-bold uppercase tracking-widest w-40 flex-shrink-0 whitespace-nowrap">[ IMPORTANCIA ]</span>
+                        <p>Este portafolio es fundamental ya que me permitirá evaluar mi propio avance a lo largo del semestre, además de servir como una evidencia centralizada de los conocimientos técnicos adquiridos durante el curso.</p>
+                    </div>
+                </div>
+            </section>
 
-        <!-- 4. Stack -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-gray-800">
-            <div class="md:col-span-4">
-                <h2 class="text-2xl font-cyber font-bold text-cpCyan uppercase tracking-widest">Información Técnica del Sitio</h2>
-            </div>
-            <div class="md:col-span-8">
-                <ul class="text-sm md:text-base space-y-4">
-                    <li class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-l-2 border-gray-700 pl-4">
-                        <span class="text-cpYellow font-bold">LENGUAJES & HERRAMIENTAS:</span> 
-                        <span class="sm:col-span-2">HTML5, Tailwind CSS, CSS3, JavaScript.</span>
-                    </li>
-                    <li class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-l-2 border-gray-700 pl-4">
-                        <span class="text-cpYellow font-bold">HOSTING:</span> 
-                        <span class="sm:col-span-2">GitHub Pages.</span>
-                    </li>
-                    <li class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-l-2 border-gray-700 pl-4">
-                        <span class="text-cpYellow font-bold">VERSIONING:</span> 
-                        <span class="sm:col-span-2">Git CLI & Repositorios de GitHub.</span>
-                    </li>
-                </ul>
-            </div>
-        </div>
+            <!-- Grid de Dos Columnas para Perfil y Stack Técnico -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                
+                <!-- 3. Perfil (Columna Izquierda con Badge HUD) -->
+                <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                    <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                        CITIZEN_DETAILS
+                    </div>
 
-        <!-- 5. Formulario -->
-        <div id="contacto" class="grid grid-cols-1 md:grid-cols-12 gap-6 py-8 scroll-mt-28">
-            <div class="md:col-span-4">
-                <h2 class="text-2xl font-cyber font-bold text-cpPink uppercase tracking-widest">Contacto</h2>
+                    <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                        <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 11c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"></path></svg>
+                        <h2 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">Perfil del Estudiante</h2>
+                    </div>
+                    
+                    <div class="space-y-6 font-mono text-sm md:text-base text-gray-300">
+                        <p>Estudiante entusiasta de Ingeniería en Tecnologías de Información, dispuesto a aprender y adaptarse a los retos de nuevas tecnologías con experiencia práctica en despliegue de infraestructuras de red en entornos Linux y desarrollo de herramientas mediante lenguajes como Python, Java, C y Go.</p>
+                        
+                        <div class="bg-black/60 p-4 border-l-2 border-ctosBlue">
+                            <strong class="text-ctosBlue uppercase text-xs tracking-widest block mb-3">Identified_Interests:</strong> 
+                            <div class="flex flex-wrap gap-2 text-xs">
+                                <span class="border border-ctosBlue/50 bg-ctosBlue/10 text-white px-2 py-1 hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                                    [ DIR: Análisis_Datos ]
+                                </span>
+                                <span class="border border-ctosBlue/50 bg-ctosBlue/10 text-white px-2 py-1 hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                                    [ DIR: Networking ]
+                                </span>
+                                <span class="border border-ctosBlue/50 bg-ctosBlue/10 text-white px-2 py-1 hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                                    [ DIR: Ciberseguridad ]
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. Stack (Columna Derecha con Badge HUD y título actualizado) -->
+                <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                    <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                        SYSTEM_SPECS
+                    </div>
+
+                    <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                        <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path><path stroke-linecap="square" stroke-linejoin="miter" d="M4 12h16M8 16h.01M8 8h.01"></path></svg>
+                        <h2 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest">Información técnica del sitio</h2>
+                    </div>
+                    
+                    <ul class="text-sm md:text-base space-y-4 font-mono text-gray-300">
+                        <li class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-black/60 p-3 border border-white/5">
+                            <span class="text-white font-bold text-xs uppercase sm:w-32 tracking-widest">Lang_Tools</span> 
+                            <span class="text-ctosBlue hidden sm:inline">></span>
+                            <span>HTML5, Tailwind CSS, JavaScript.</span>
+                        </li>
+                        <li class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-black/60 p-3 border border-white/5">
+                            <span class="text-white font-bold text-xs uppercase sm:w-32 tracking-widest">Hosting_Net</span> 
+                            <span class="text-ctosBlue hidden sm:inline">></span>
+                            <span>GitHub Pages.</span>
+                        </li>
+                        <li class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-black/60 p-3 border border-white/5">
+                            <span class="text-white font-bold text-xs uppercase sm:w-32 tracking-widest">Versioning</span> 
+                            <span class="text-ctosBlue hidden sm:inline">></span>
+                            <span>Git CLI & Repositorios GitHub.</span>
+                        </li>
+                    </ul>
+                </section>
             </div>
-            <div class="md:col-span-8">
-                <!-- RECUERDA PONER TU ENLACE DE FORMSPREE AQUÍ -->
-                <form action="https://formspree.io/f/maewgqvk" method="POST" class="space-y-4 font-cyber text-lg tracking-wide w-full">
+
+            <!-- 5. Formulario (Con Badge HUD) -->
+            <section id="contacto" class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative scroll-mt-28 mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    ESTABLISH_LINK
+                </div>
+
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                    <h2 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">Contacto Directo</h2>
+                </div>
+                
+                <!-- -->
+                <form action="https://formspree.io/f/maewgqvk" method="POST" class="space-y-4 font-mono text-sm tracking-wide w-full max-w-4xl mx-auto">
                     <input type="hidden" name="_autoresponse" value="CONEXIÓN ESTABLECIDA. He recibido tu mensaje en mi terminal. Responderé tu ping pronto. - Sam.">
                     
-                    <div>
-                        <label class="block text-cpPink mb-1 uppercase">Nombre:</label>
-                        <input type="text" name="nombre" required class="w-full bg-transparent border-b border-gray-700 focus:border-cpPink focus:outline-none text-white py-2 transition-colors">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div class="bg-black/60 p-2 border border-white/10 w-full">
+                            <label class="block text-gray-500 text-xs mb-1 uppercase px-2 pt-1">Nombre:</label>
+                            <input type="text" name="nombre" required class="w-full bg-transparent border-none focus:outline-none text-white px-2 pb-1 text-base">
+                        </div>
+                        <div class="bg-black/60 p-2 border border-white/10 w-full">
+                            <label class="block text-gray-500 text-xs mb-1 uppercase px-2 pt-1">Correo:</label>
+                            <input type="email" name="email" required class="w-full bg-transparent border-none focus:outline-none text-white px-2 pb-1 text-base">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-cpPink mb-1 uppercase">Correo:</label>
-                        <input type="email" name="email" required class="w-full bg-transparent border-b border-gray-700 focus:border-cpPink focus:outline-none text-white py-2 transition-colors">
+
+                    <div class="bg-black/60 p-2 border border-white/10">
+                        <label class="block text-gray-500 text-xs mb-1 uppercase px-2 pt-1">Mensaje:</label>
+                        <textarea name="mensaje" rows="4" required class="w-full bg-transparent border-none focus:outline-none text-white px-2 pb-1 text-base resize-none"></textarea>
                     </div>
-                    <div>
-                        <label class="block text-cpPink mb-1 uppercase mt-4">Mensaje:</label>
-                        <textarea name="mensaje" rows="3" required class="w-full bg-transparent border border-gray-700 focus:border-cpPink focus:outline-none text-white p-3 transition-colors resize-none"></textarea>
-                    </div>
-                    <button type="submit" class="bg-transparent border-2 border-cpPink text-cpPink font-bold py-2 px-8 uppercase hover:bg-cpPink hover:text-white hover:shadow-neon-red transition-all duration-300 w-full mt-4">
-                        EJECUTAR_ENVÍO()
+                    
+                    <button type="submit" class="bg-ctosBlue text-black font-cyber font-bold py-3 px-8 uppercase tracking-widest hover:bg-white transition-all duration-300 w-full flex items-center justify-center gap-2">
+                        [ ENVIAR ]
                     </button>
                 </form>
-            </div>
+            </section>
         </div>
     </main>
 
-    <!-- 6. Pie de página -->
-    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-cpPink/50 w-full">
-        <p>V.1.0.0 // &copy; 2026 Samuel López Gómez. All rights reserved.</p>
-        <p class="mt-2 text-cpPink drop-shadow-[0_0_5px_rgba(255,0,60,0.8)]">Encriptación Activa // CNO IV – Seguridad Informática</p>
+    <!-- Pie de página -->
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
     </footer>
 
-    <!-- SCRIPT PARA EL FONDO ANIMADO DE DATOS (MATRIX CYBERPUNK) -->
+    <!-- SCRIPTS -->
     <script>
+        // 1. SISTEMA DE ARRANQUE
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const bootScreen = document.getElementById('ctos-boot');
+                bootScreen.style.opacity = '0';
+                setTimeout(() => {
+                    bootScreen.style.display = 'none';
+                    runTelemetryEffect();
+                }, 500);
+            }, 1500);
+        });
+
+        // 2. EFECTO DE TELEMETRÍA INFINITO
+        const nameElement = document.getElementById('telemetry-name');
+        const originalText = nameElement.getAttribute('data-value');
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+
+        function runTelemetryEffect() {
+            let iteration = 0;
+            clearInterval(nameElement.interval);
+            
+            nameElement.interval = setInterval(() => {
+                nameElement.innerText = originalText.split("").map((letter, index) => {
+                    if (letter === " ") return " ";
+                    if (index < iteration) return originalText[index];
+                    return chars[Math.floor(Math.random() * chars.length)];
+                }).join("");
+                
+                if (iteration >= originalText.length) {
+                    clearInterval(nameElement.interval);
+                    setTimeout(runTelemetryEffect, 4000);
+                }
+                iteration += 1 / 3;
+            }, 30);
+        }
+
+        // 3. FONDO ANIMADO DE DATOS (MATRIX ctOS)
         const canvas = document.getElementById('matrix-bg');
         const ctx = canvas.getContext('2d');
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        const characters = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
+        const characters = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         const charArray = characters.split('');
-        
         const fontSize = 16;
         const columns = canvas.width / fontSize;
         const drops = [];
@@ -228,10 +365,9 @@
         }
 
         function drawMatrix() {
-            ctx.fillStyle = 'rgba(5, 0, 0, 0.1)';
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = '#FF003C';
+            ctx.fillStyle = '#00a8ff';
             ctx.font = fontSize + 'px "Fira Code", monospace';
 
             for (let i = 0; i < drops.length; i++) {

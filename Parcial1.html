@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parcial 1 // Portafolio de Seguridad Informática</title>
     
-    <!-- Fuentes de Google: Fira Code (Terminal) y Orbitron (Estilo Watch_Dogs) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS por CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -92,22 +90,18 @@
 </head>
 <body class="font-mono text-gray-300 min-h-screen flex flex-col">
 
-    <!-- Capas de fondo animado -->
     <canvas id="matrix-bg"></canvas>
     <div class="vignette"></div>
     <div class="scanlines"></div>
     
-    <!-- Indicador de cámara superior -->
     <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
         <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
         <span>REC</span>
     </div>
 
-    <!-- 1. ENCABEZADO ORDENADO (Mismo que el index) -->
     <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full overflow-hidden group">
         <div class="max-w-[1400px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
 
-            <!-- Izquierda: Logo + Identidad + Telemetría -->
             <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
                 <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
                     <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
@@ -132,31 +126,26 @@
                 </div>
             </div>
 
-            <!-- Derecha: Menú de navegación (Resaltando PARCIAL_1) -->
             <nav class="flex flex-nowrap items-center justify-center xl:justify-end gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto overflow-x-auto whitespace-nowrap pb-1 xl:pb-0">
                 <a href="index.html" class="text-white hover:text-ctosBlue transition-colors">> INICIO</a>
                 <a href="Parcial1.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)]">> PARCIAL_1</a>
-                <a href="#parcial2" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_2</a>
-                <a href="#parcial3" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_3</a>
-                <a href="#certificaciones" class="text-gray-400 hover:text-ctosBlue transition-colors">> CERTIFICACIONES</a>
+                <a href="index.html#parcial2" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="index.html#parcial3" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="index.html#certificaciones" class="text-gray-400 hover:text-ctosBlue transition-colors">> CERTIFICACIONES</a>
                 <a href="index.html#contacto" class="text-ctosBlue hover:text-white transition-colors">> CONTACTO</a>
             </nav>
             
         </div>
     </header>
 
-    <!-- Contenedor Principal (Dashboard Grid) -->
     <main class="max-w-5xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
         
-        <!-- Caja principal con relative para anclar la etiqueta -->
         <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-10 relative">
             
-            <!-- Etiqueta superior derecha (Badge) -->
             <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
                 DATABASE_DIR
             </div>
 
-            <!-- Título de Sección -->
             <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-4 pr-32">
                 <svg class="w-8 h-8 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                 <div>
@@ -165,12 +154,10 @@
                 </div>
             </div>
 
-            <!-- Grid de Actividades -->
             <div class="grid grid-cols-1 gap-6">
 
                 <!-- TARJETA: ACTIVIDAD 02 -->
                 <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group hover:border-ctosBlue/50 transition-colors">
-                    <!-- Badge HUD -->
                     <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest group-hover:bg-ctosBlue group-hover:text-black transition-colors">
                         LOG_02
                     </div>
@@ -192,7 +179,6 @@
 
                 <!-- TARJETA: ACTIVIDAD 03 -->
                 <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group hover:border-ctosBlue/50 transition-colors">
-                    <!-- Badge HUD -->
                     <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest group-hover:bg-ctosBlue group-hover:text-black transition-colors">
                         LOG_03
                     </div>
@@ -203,7 +189,7 @@
                     </div>
                     
                     <div class="space-y-4 font-mono text-sm md:text-base text-gray-300">
-                        <p>Implementación y Análisis de un Keylogger.</p>
+                        <p>Implementación y Análisis de un Keylogger a nivel de sistema operativo.</p>
                         <div class="pt-4">
                             <a href="Actividad3.html" class="inline-block border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
                                 > [ EJECUTAR_REPORTE ]
@@ -212,16 +198,36 @@
                     </div>
                 </section>
 
-                <!-- TARJETA: ACTIVIDAD PENDIENTE (ENCRIPTADA) -->
+                <!-- TARJETA: ACTIVIDAD 04 (NUEVA DESBLOQUEADA) -->
+                <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group hover:border-ctosBlue/50 transition-colors">
+                    <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest group-hover:bg-ctosBlue group-hover:text-black transition-colors">
+                        LOG_04
+                    </div>
+
+                    <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                        <svg class="w-6 h-6 text-ctosBlue flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest group-hover:text-ctosBlue transition-colors">Act. 04 - Una página demasiado convincente</h3>
+                    </div>
+                    
+                    <div class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                        <p>Simulación de ingeniería social (Phishing) y captura de credenciales utilizando Social-Engineer Toolkit (SET).</p>
+                        <div class="pt-4">
+                            <a href="Actividad4.html" class="inline-block border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                                > [ EJECUTAR_REPORTE ]
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TARJETA: ACTIVIDAD 05 (PENDIENTE / ENCRIPTADA) -->
                 <section class="border border-red-900/30 bg-black/60 p-6 pt-10 md:pt-6 relative opacity-70 cursor-not-allowed">
-                    <!-- Badge HUD Cerrado -->
                     <div class="absolute top-0 right-0 bg-red-900/20 border-l border-b border-red-900/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-red-500 tracking-widest animate-pulse">
                         ENCRYPTED
                     </div>
 
                     <div class="flex items-center gap-3 border-b border-red-900/30 pb-3 mb-4 pr-24">
                         <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        <h3 class="text-lg md:text-xl font-cyber font-bold text-gray-500 uppercase tracking-widest">Act. 04 - [ ARCHIVO CORRUPTO ]</h3>
+                        <h3 class="text-lg md:text-xl font-cyber font-bold text-gray-500 uppercase tracking-widest">Act. 05 - [ ARCHIVO CORRUPTO ]</h3>
                     </div>
                     
                     <div class="space-y-4 font-mono text-sm md:text-base text-gray-500">
@@ -238,13 +244,11 @@
         </div>
     </main>
 
-    <!-- Pie de página -->
     <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
         <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
         <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
     </footer>
 
-    <!-- Script Matrix Azul y Telemetría -->
     <script>
         // Efecto Telemetría
         const nameElement = document.getElementById('telemetry-name');

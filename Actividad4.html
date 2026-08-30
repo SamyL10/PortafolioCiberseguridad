@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 04 // ctOS Database</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            opacity: 0.25;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+
+        .hud-corners {
+            position: relative;
+        }
+        .hud-corners::before, .hud-corners::after {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: #00a8ff;
+            border-style: solid;
+        }
+        .hud-corners::before {
+            top: -1px; left: -1px;
+            border-width: 2px 0 0 2px;
+        }
+        .hud-corners::after {
+            bottom: -1px; right: -1px;
+            border-width: 0 2px 2px 0;
+        }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full overflow-hidden group">
+        <div class="max-w-[1400px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">
+                            SYS_ACTIVE
+                        </div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">
+                            SAMUEL LÓPEZ GÓMEZ
+                        </h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-center xl:justify-end gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto overflow-x-auto whitespace-nowrap pb-1 xl:pb-0">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors">> INICIO</a>
+                <a href="Parcial1.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)]">> PARCIAL_1</a>
+                <a href="index.html#parcial2" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="index.html#parcial3" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="index.html#certificaciones" class="text-gray-400 hover:text-ctosBlue transition-colors">> CERTIFICACIONES</a>
+                <a href="index.html#contacto" class="text-ctosBlue hover:text-white transition-colors">> CONTACTO</a>
+            </nav>
+            
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 flex-grow">
+        
+        <div class="mb-6">
+            <a href="Parcial1.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-10 relative">
+            
+            <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                ACT_04_REPORT
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-ctosBlue/30 pb-4 pr-10">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest">Act. 04: Una página demasiado convincente</h2>
+                        <p class="text-xs md:text-sm text-ctosBlue mt-1 font-mono uppercase tracking-widest">>> Documentación Estructurada</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-4 pt-8 md:pt-6 relative group flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <!-- Etiqueta superior -->
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] md:text-xs font-bold tracking-widest">
+                    ATTACHMENT_FOUND
+                </div>
+                
+                <!-- Info del archivo -->
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="text-ctosBlue animate-pulse flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-sm md:text-base">Reporte De Actividad</h4>
+                        <!-- Cambia el texto a .pdf si decides usar un PDF -->
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Reporte de Actividad Detallado incluyendo referencias// Extensión: .pdf</p>
+                    </div>
+                </div>
+                <!-- Botón para abrir en nueva pestaña -->
+                <a href="Actividad4.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full md:w-auto cursor-pointer mt-2 md:mt-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_ARCHIVO ]
+                </a>
+            </div>
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    SYS_OBJECTIVES
+                </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">1. Objetivo de la actividad</h3>
+                </div>
+                <div class="space-y-4 text-sm md:text-base leading-relaxed text-gray-300 font-mono">
+                    <p>El objetivo de esta actividad consiste en implementar y analizar en un entorno de laboratorio controlado, una simulación de ingeniería social mediante el uso de la herramienta <strong>Social – Engineer Toolkit (SET)</strong>, utilizando una página web ficticia para comprender el funcionamiento de una técnica de captura de información y reconocer los elementos que permiten identificar un intento de phishing.</p>
+                </div>
+            </section>
+
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    SCENARIO_DEF
+                </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">2. Descripción del escenario</h3>
+                </div>
+                <div class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                    <p>El escenario propuesto para actividad simula el área de seguridad informática de una organización la cual ha estado recibiendo varios reportes de empleados que aseguran haber recibido un mensaje relacionado con una supuesta actualización de sus credenciales de inicio de sesión. Ya que el mensaje contiene un enlace que dirige a un portal aparentemente institucional.</p>
+                    <p>En dicha página incluye un logotipo, campos de usuario y contraseña y un mensaje indicando que la sesión ha expirado y se necesita iniciar sesión nuevamente para continuar.</p> 
+                    <p>A primera vista, nada parece fuera de lo común. Sin embargo el portal <strong>no pertenece a la organización.</strong></p> 
+                </div>
+            </section>
+
+            <div class="bg-red-950/40 border border-red-600/50 p-6 pt-10 md:pt-6 relative group">
+                <div class="absolute top-0 right-0 bg-red-600/20 border-l border-b border-red-600/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-red-500 tracking-widest animate-pulse">
+                    SYS_WARNING
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="text-red-500 font-bold text-2xl md:text-3xl mt-1 animate-pulse flex-shrink-0">
+                        [!]
+                    </div>
+                    <div class="pr-10 md:pr-20">
+                        <h4 class="text-red-500 font-cyber font-bold text-lg uppercase tracking-widest mb-1">
+                            Aviso de Responsabilidad
+                        </h4>
+                        <p class="text-gray-400 font-mono text-sm leading-relaxed">
+                            La información y los procedimientos detallados en esta sección han sido ejecutados en un entorno de laboratorio controlado y aislado, con propósitos estrictamente académicos. Cualquier uso de estas técnicas fuera de un contexto de aprendizaje autorizado constituye una violación de las políticas de seguridad y puede acarrear severas consecuencias legales.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    LAB_CONFIG
+                </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">3. Configuración del laboratorio</h3>
+                </div>
+                
+                <p class="text-gray-400 font-mono text-sm mb-6">Secuencia de configuración y pasos ejecutados. <span class="text-ctosBlue">[CLIC EN LA IMAGEN PARA AMPLIAR]</span></p>
+
+                <div class="space-y-8 font-mono"> 
+                    
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Paso 01: Requisitos e Instalación</h4>
+                        
+                        <div class="text-gray-300 text-sm md:text-base leading-relaxed mb-6 space-y-4 font-mono">
+                            <p>Procederemos primeramente a crear el entorno controlado. Para esto necesitaremos lo siguiente:</p>
+                            
+                            <ul class="space-y-3 pl-2">
+                                <li class="flex items-start gap-3">
+                                    <span class="text-ctosBlue font-bold mt-0.5">>></span>
+                                    <p><strong class="text-white">Máquina Virtual de KaliLinux:</strong> La cual servirá como atacante ya que corre la herramienta Social Engineer Toolkit (SET) y también levantará el servidor web falso con Credential Harvester y escuchará la información que se envíe.</p>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-ctosBlue font-bold mt-0.5">>></span>
+                                    <p><strong class="text-white">Maquina Virtual de Windows10:</strong> La cual servirá como la víctima/cliente ya que en esta máquina se abrirá el enlace que se creará en la máquina de KALI y se escribirán las credenciales en el formulario.</p>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-ctosBlue font-bold mt-0.5">>></span>
+                                    <p><strong class="text-white">Tailscale:</strong> Es una VPN mesh (red privada virtual punto a punto). La cual permitirá que la máquina de Windows pueda acceder a la dirección que levanta SET en la máquina de Kali Linux.</p>
+                                </li>
+                            </ul>
+
+                            <h5 class="text-white font-cyber font-bold uppercase mt-8 mb-2 border-b border-white/10 pb-2">
+                                > Instalación Tailscale en ambas máquinas virtuales
+                            </h5>
+                            
+                            <p>Tailscale es una VPN mesh (red privada virtual punto a punto). La finalidad de usarlo en esta actividad es permitir que la máquina de Windows pueda acceder al servidor web que levanta SET en la máquina de Kali Linux, aunque ambas máquinas virtuales estén en redes diferentes, aisladas o detrás de NAT.</p>
+                            <p>Ya que cuando levantamos el Credential Harvester en Kali, SET crea un servidor web en una IP local de la máquina virtual. Si nuestra máquina de Windows está en otra red virtual o en NAT, probablemente no podrá llegar a esa IP por alguna de las siguientes razones:</p>
+                            
+                            <ul class="space-y-2 pl-4 border-l-2 border-ctosBlue/50 py-2">
+                                <li class="flex items-start gap-2">
+                                    <span class="text-ctosBlue">[*]</span>
+                                    <span>Las VMs en modo NAT están aisladas de la red física.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-ctosBlue">[*]</span>
+                                    <span>VirtualBox/VMware asignan rangos IP diferentes a cada VM.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-ctosBlue">[*]</span>
+                                    <span>El tráfico entre redes virtuales está bloqueado por defecto.</span>
+                                </li>
+                            </ul>
+
+                            <p class="bg-black/40 p-3 border border-white/5 mt-4">
+                                Entonces Tailscale creará una red privada overlay sobre internet. Cuando instalamos el servicio en ambas máquinas virtuales y las conectamos a alguna cuenta, nuestra máquina Kali y nuestra máquina de Windows obtienen IPs totalmente diferentes, pero ambas máquinas podrán comunicarse entre sí directamente como si estuvieran en la misma LAN.
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video">
+                                <img src="Imagenes/Act4.1.png" alt="Evidencia Paso 1 - 1" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                            </div>
+                            <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video">
+                                <img src="Imagenes/Act4.2.png" alt="Evidencia Paso 1 - 2" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Paso 02: Instalación de SET</h4>
+                        <div class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            <p>Después de haber instalado ambos servicios procederemos a dirigirnos a nuestra máquina virtual de Kali para instalar la herramienta de SET. Para esto nos dirigiremos al directorio raíz y crearemos una carpeta llamada tools la cual servirá para instalar la herramienta.</p> 
+                            <p>Dentro de la carpeta ejecutaremos el comando <code>git clone</code> para replicar el contenido del repositorio oficial de la herramienta SET.</p>
+                        </div>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.3.png" alt="Evidencia Paso 2" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Paso 03: Preparación del Entorno</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Después ejecutaremos los comandos que vienen anexados dentro del repositorio para preparar el entorno en el cual vamos a instalar SET.
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.4.png" alt="Evidencia Paso 3" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Paso 04: Ejecución de la herramienta</h4>
+                        <div class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            <p>Después de haber ejecutado los comandos anteriores, procederemos a ejecutar la herramienta. Al escribir y ejecutar el comando nos manda un mensaje indicándonos los términos de uso de la aplicación. Escribiremos Y para aceptar y presionamos enter para que se haga la instalación de la herramienta.</p>
+                        </div>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.5.png" alt="Evidencia Paso 4" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Paso 05: Creación del archivo web falso</h4>
+                        <div class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            <p>Después abriremos una nueva terminal y nos cambiaremos a cualquier carpeta o crearemos una nueva, esto a elección personal. Esto ya que dentro de esta carpeta alojaremos el archivo de la página web falsa que usaremos.</p>
+                            <p>Escribiremos el comando nano y el nombre del archivo que deseamos ponerle, ya que nano es un editor de texto el cual creará un archivo y podremos guardarlo con cualquier extensión que deseemos.</p>
+                        </div>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.6.png" alt="Evidencia Paso 5" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Paso 06: Edición del Código HTML</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Dentro del archivo nano escribiremos el código para nuestra página HTML, procederemos a presionar Ctrl+X para guardar el archivo y indicaremos que sí deseamos guardar el contenido del archivo y luego presionaremos enter para guardar el contenido.
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.7.png" alt="Evidencia Paso 6" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    SYS_EVALUATION
+                </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">4. Evidencias y descripción del funcionamiento</h3>
+                </div>
+                
+                <p class="text-gray-400 font-mono text-sm mb-6">Detalle de las capturas realizadas en el sistema. <span class="text-ctosBlue">[CLIC EN LA IMAGEN PARA AMPLIAR]</span></p>
+
+                <div class="space-y-8 font-mono">
+                    
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 01</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Después de haber configurado nuestro entorno controlado y las herramientas necesarias procederemos a hacer el uso del módulo de Credential Harvester. Nos regresaremos a nuestra terminal en la cual hicimos la instalación de SET y se nos mostrara un menú como el mostrado en la imagen. Para poder hacer uso del Credential harvester primeramente seleccionaremos la opción 1 Social-Engineering Attacks
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.8.png" alt="Evidencia 1" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 02</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Después de haber entrado a la opción 1, seleccionaremos la opción 2 que es Website Attack Vectors
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.9.png" alt="Evidencia 2" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 03</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Después seleccionaremos la opción 3 para empezar con la configuración del Credential Harverster
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.10.png" alt="Evidencia 3" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 04</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Una vez dentro del módulo Credential Harvester procederemos a seleccionar la opción 3 Custom Import ya que vamos a utilizar el archivo .html que creamos previamente.
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.11.png" alt="Evidencia 4" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 05</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Credential Harvester nos pedirá una dirección IP que corresponde a la dirección a la que el formulario web enviará las credenciales capturadas mediante una petición POST. En este paso pondremos nuestra dirección IP asignada por Tailscale a la máquina de Kali Linux.
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.12.png" alt="Evidencia 5" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 06</h4>
+                        <div class="text-gray-300 text-sm md:text-base leading-relaxed mb-4 space-y-4">
+                            <p>Para continuar con la configuración del módulo Credential Harvester se especificó la ruta del directorio donde se almacenó el archivo HTML. Es importante destacar que SET no abre un archivo de manera directa, en su lugar levanta un servidor web embebido que requiere conocer la ubicación de todos los recursos del sitio. Por esta razón fue necesario proporcionar únicamente la ruta de la carpeta contenedora. Si se hubiera indicado la ruta del archivo individual, SET no habría detectado correctamente los recursos y habría regresado al menú principal.</p>
+                            <p>Asimismo el archivo principal del sitio debió renombrarse obligatoriamente a index.html ya que los servidores web utilizan este nombre como convención estándar para identificar el documento raíz. Este archivo es el que se envía automáticamente cuando un cliente solicita la URL base. De haberse mantenido el nombre original del archivo el servidor no habría podido determinar cuál era el recurso principal lo que habría generado un error.</p>
+                        </div>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.13.png" alt="Evidencia 6" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 07</h4>
+                        <div class="text-gray-300 text-sm md:text-base leading-relaxed mb-4 space-y-4">
+                            <p>Finalmente SET nos mandara un mensaje indicándonos que encontró el archivo index.html dentro del directorio que le proporcionamos previamente y nos pregunta si deseamos copiar solo el archivo .html o todo el contenido de la carpeta, seleccionaremos la opción 1 que es copiar el archivo .html. </p>
+                            <p>Tras importar el archivo index.html, SET solicita la URL del sitio web. Este parámetro configura la redirección post-captura, es decir una vez que la victima ingresa sus credenciales en el formulario falso y SET las intercepta, el navegador de la victima es redirigido automáticamente hacia la URL proporcionada. El objetivo de esta redirección es mantener la ilusión de que el inicio de sesión fue exitoso, evitando que la victima sospeche del ataque al encontrarse con una página de error o en blanco. Esta redirección opera como un parámetro de cierre del flujo de ataque y no representa una interacción con servicios externos como parte del vector de compromiso, ya que todo se mantuvo dentro del entorno de laboratorio aislado.</p>
+                        </div> 
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.14.png" alt="Evidencia 7" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 08</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Completado la anterior podemos observar que el Credencial Harvester ya está listo y funcionando en el puerto 80 por defecto ya que es el estándar para el protocolo http.
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.15.png" alt="Evidencia 8" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 09</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Procederemos a cambiarnos a la maquina virtual de Windows y accederemos al servicio web levantado previamente en Kali Linux. En el navegador escribiremos la dirección IP que Tailscale asigno a la maquina atacante por ejemplo 102.77.xxx.xx. Una vez cargada la pagina completaremos el formulario con datos de prueba para simular un inicio de sesión. Se utilizo el usuario prueba y la contraseña prueba1234
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.16.png" alt="Evidencia 9" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-2">> Evidencia 10</h4>
+                        <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4">
+                            Una vez que la víctima presione el botón de inicio de sesión en la maquina de Windows, regresamos a nuestra maquina de Kali para verificar la captura. En la terminal donde se ejecuta SET podemos observar que el módulo Credential Harvester intercepto y registro los datos de autenticación ingresados, mostrando los campos identificados en tiempo real. Para finalizar la ejecución del servicio se enviará la señal de interrupción del proceso mediante la combinación de teclas Ctrl+C.
+                        </p>
+                        <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                            <img src="Imagenes/Act4.17.png" alt="Evidencia 10" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    DATA_FLOW
+                </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">5. Explicación del flujo de captura de información</h3>
+                </div>
+                <div class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                    <p>El flujo de captura de información está dividido en 7 etapas:</p>
+                    
+                    <ul class="space-y-4 pl-4 border-l-2 border-ctosBlue/50 py-2">
+                        <li><strong class="text-white">Primera etapa:</strong> La máquina Victima (Windows) establece una conexión TCP hacia la dirección IP asignada por Tailscale a la maquina atacante (Kali). Esta conexión es posible gracias al túnel punto a punto que Tailscale genera entre ambos nodos, independientemente de la topología de red subyacente de las maquinas virtuales. El navegador de la víctima envía una petición HTTP GET al servidor web embebido que SET levanto durante la configuración del ataque.</li>
+                        <li><strong class="text-white">Segunda etapa:</strong> El servidor embebido de SET recibe la petición GET y muestra el archivo index.html almacenado en el directorio importado. El navegador de la victima interpreta y muestra dicha página. En este punto la victima percibe una interfaz legitima con los campos de inicio de sesión así como también el mensaje de sesión expirada.</li>
+                        <li><strong class="text-white">Tercera etapa:</strong> La victima introduce sus datos de autenticación en los campos del formulario. Estos valores permanecen únicamente en el lado del cliente es decir en el navegador de la máquina de Windows hasta que se ejecute la acción de envió.</li>
+                        <li><strong class="text-white">Cuarta Etapa:</strong> Al presionar el botón de inicio de sesión, el navegador construye una petición HTPP POST dirigida al valor configurado en el atributo action del formulario. Dicho atributo apunta a la dirección IP de la maquina atacante configurada como POST back. Los datos ingresados son encapsulados en el cuerpo de la petición bajo los parámetros username y password.</li>
+                        <li><strong class="text-white">Quinta etapa:</strong> SET mantiene un listener activo en la dirección y puerto especificados como POST back. Cuando llega la petición POST el módulo Credential Harvester la intercepta antes de que se procese como una autenticación legitima. Extrae los valores de los campos del cuerpo de la petición y los registra en la terminal de ejecución en tiempo real.</li>
+                        <li><strong class="text-white">Sexta etapa:</strong> En la terminal de Kali se observa la salida del modulo donde se despliegan los pares clave-valor capturados. En la salida se puede confirmar que la técnica de ingeniería social logro extraer la información de autenticación sin que la víctima percibiera la interceptación.</li>
+                        <li><strong class="text-white">Séptima Etapa:</strong> Una vez registrados los datos Credential Harvester responde al navegador de la victima con una redirección HTTP hacia la URL configurada en el parámetro de redirección. El navegador de la victima carga el destino final, manteniendo la ilusión de que el proceso de inicio de sesión concluyo de manera normal.</li>
+                    </ul>
+                </div>
+
+                <div class="mt-8 border border-white/10 p-4 bg-black/60 group hover:border-ctosBlue/50 transition-colors">
+                    <div class="bg-[#050505] flex items-center justify-center relative border border-white/5 p-1 aspect-video md:aspect-[21/9]">
+                        <img src="Imagenes/Act4.18.png" alt="Diagrama de Flujo" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity cursor-zoom-in" onclick="openModal(this.src)">
+                    </div>
+                    <p class="text-ctosBlue text-xs mt-3 font-mono font-bold text-center uppercase">> Diagrama_Analisis_Flujo</p>
+                </div>
+            </section>
+
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    SEC_CONTROLS
+                </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">6. Controles de seguridad propuestos</h3>
+                </div>
+                <ul class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white tracking-wider uppercase">Capacitación continua:</strong> Entrenar al personal para identificar indicadores de phishing y realizar campañas periódicas de correos de prueba sin daño para medir la tasa de clics y reforzar el aprendizaje de quienes caen.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white tracking-wider uppercase">Autenticación Multifactor:</strong> Tener activado el doble factor de autenticación (2FA) actúa como una capa adicional en caso de que el atacante capture el usuario y la contraseña.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white tracking-wider uppercase">Filtrado en el correo:</strong> Implementar filtros anti-spoofing como SPF, DKIM y DMARC dentro de la red para evitar que atacantes suplanten la identidad.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white tracking-wider uppercase">Honeypots:</strong> Colocar cuentas señuelo (canary tokens) en la red. Si alguien intenta usar esas credenciales se generará una alerta inmediata de compromiso.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white tracking-wider uppercase">Segmentación de la red:</strong> Si un atacante ingresa con credenciales robadas la segmentación de la red y los firewalls internos deben impedir que se mueva lateralmente hacia servidores críticos.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white tracking-wider uppercase">Protección de DNS:</strong> Implementar resolutores DNS con filtrado que impidan la resolución de dominios conocidos por alojar campañas de phishing.</p>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    SYS_CONCLUSION
+                </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">7. Conclusión</h3>
+                </div>
+                <div class="space-y-4 font-mono text-sm md:text-base leading-relaxed text-gray-300">
+                    <p>Esta actividad evidencio que los ataques de phishing no requieren infraestructura sofisticada para ser efectivos ya que con una pagina sencilla, un servidor local y un enlace dirigido es posible comprometer credenciales de autenticación. Por ello la prevención no puede depender únicamente de controles técnicos sino que debe complementarse con una fuerte cultura de seguridad en los usuarios, la capacitación continua para identificar intentos de phishing y la implementación de mecanismos como lo es la autenticación multifactorial, el filtrado de correo y el monitoreo constante en la red.</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <div id="image-modal" class="fixed inset-0 z-[20000] bg-black/95 backdrop-blur-md hidden flex-col justify-center items-center" onclick="closeModal()">
+        <div class="absolute top-6 right-6 md:top-10 md:right-10 text-ctosBlue font-cyber font-bold text-sm md:text-xl cursor-pointer hover:text-white transition-colors">
+            [ CERRAR_CONEXIÓN ]
+        </div>
+        <div class="relative max-w-5xl w-[90%] max-h-[85vh] border border-ctosBlue/50 p-2 bg-[#050505] shadow-[0_0_20px_rgba(0,168,255,0.3)]" onclick="event.stopPropagation()">
+            <div class="absolute top-0 left-0 bg-ctosBlue/20 px-2 py-1 text-[10px] font-cyber text-ctosBlue uppercase tracking-widest pointer-events-none">
+                IMAGE_VIEWER_V1.0
+            </div>
+            <img id="modal-img" src="" alt="Ampliación" class="w-full h-full max-h-[80vh] object-contain">
+        </div>
+    </div>
+
+    <script>
+        // 1. Efecto Telemetría
+        window.addEventListener('load', () => {
+            const nameElement = document.getElementById('telemetry-name');
+            if (nameElement) {
+                const originalText = nameElement.getAttribute('data-value');
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+                function runTelemetryEffect() {
+                    let iteration = 0;
+                    clearInterval(nameElement.interval);
+                    nameElement.interval = setInterval(() => {
+                        nameElement.innerText = originalText.split("").map((letter, index) => {
+                            if (letter === " ") return " ";
+                            if (index < iteration) return originalText[index];
+                            return chars[Math.floor(Math.random() * chars.length)];
+                        }).join("");
+                        if (iteration >= originalText.length) {
+                            clearInterval(nameElement.interval);
+                            setTimeout(runTelemetryEffect, 4000);
+                        }
+                        iteration += 1 / 3;
+                    }, 30);
+                }
+                runTelemetryEffect();
+            }
+        });
+
+        // 2. Script Matrix Azul
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16; 
+        const columns = canvas.width / fontSize; 
+        const drops = [];
+        for (let x = 0; x < columns; x++) drops[x] = Math.random() * -100;
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff'; 
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+            
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+        // 3. Modal
+        function openModal(src) {
+            const modal = document.getElementById('image-modal');
+            const modalImg = document.getElementById('modal-img');
+            modalImg.src = src;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+    </script>
+</body>
+</html>

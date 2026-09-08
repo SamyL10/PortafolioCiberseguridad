@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 06: Road to Hall of Fame // ctOS Database</title>
+
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS por CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 9999; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px;
+            border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animación de flotación base para los hexágonos */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+            100% { transform: translateY(0px); }
+        }
+        .hex-float { animation: float 3s ease-in-out infinite; }
+        .hex-float-delayed { animation: float 3s ease-in-out infinite 1.5s; }
+
+        /* Flujo de Datos animado en la línea conectora */
+        @keyframes data-flow {
+            to { stroke-dashoffset: -24; }
+        }
+        .line-flow {
+            stroke-dasharray: 8, 16;
+            animation: data-flow 1s linear infinite;
+        }
+
+        /* Reactividad de los Hexágonos */
+        .hex-btn svg {
+            transition: all 0.3s ease;
+        }
+        .hex-btn:hover svg {
+            stroke: #ffffff;
+            filter: drop-shadow(0 0 12px #00a8ff);
+        }
+        .hex-btn.active {
+            transform: scale(1.15) !important;
+            z-index: 20;
+        }
+        .hex-btn.active svg { 
+            fill: rgba(0, 168, 255, 0.3); 
+            stroke: #ffffff;
+            filter: drop-shadow(0 0 15px #00a8ff);
+        }
+        .hex-btn.active span { 
+            color: #fff; 
+            text-shadow: 0 0 8px #00a8ff; 
+        }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO CORREGIDO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">
+                            SYS_ACTIVE
+                        </div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">
+                            SAMUEL LÓPEZ GÓMEZ
+                        </h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ajustado gap-4 (antes 5) y max-w-full para ayudar a que encaje -->
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Actividad6.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> ROAD_TO_HOF</a>
+                
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> CONTACTO</a>
+                
+                <!-- ESTE ES EL TRUCO: Un bloque invisible que fuerza un margen físico al final -->
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 flex-grow">
+        
+        <div class="mb-6">
+            <a href="Parcial1.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                ACT_06_ROADMAP
+            </div>
+
+            <!-- TÍTULO DE SECCIÓN -->
+            <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-4 pr-10">
+                <svg class="w-8 h-8 text-ctosBlue animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest">Act. 06: Road To Hall Of Fame</h2>
+                    <p class="text-xs md:text-sm text-ctosBlue mt-1 font-mono uppercase tracking-widest">>> Vulnerability Path Traversal Labs</p>
+                </div>
+            </div>
+
+            <!-- ROADMAP ESTILO SKILL TREE -->
+            <section class="relative pt-2 pb-6 w-full">
+                <p class="font-mono text-gray-400 text-xs uppercase tracking-widest text-center mb-6">> SELECCIONE UN NODO DE VULNERABILIDAD PARA DESENCRIPTAR <</p>
+                
+                <div class="w-full overflow-x-auto scrollbar-hide py-8 px-4 md:px-0">
+                    
+                    <div class="relative w-[880px] h-[260px] md:mx-auto">
+                        
+                        <div class="absolute top-1/2 left-8 right-8 h-1 bg-ctosBlue/40 -translate-y-1/2 z-0 shadow-[0_0_10px_rgba(0,168,255,0.8)]"></div>
+
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none z-0">
+                            <!-- Línea Base opaca -->
+                            <polyline points="60,60 210,200 360,60 510,200 660,60 810,200" stroke="#00a8ff" stroke-width="4" fill="none" stroke-linejoin="round" opacity="0.15"/>
+                            
+                            <!-- Línea de flujo de datos animada -->
+                            <polyline points="60,60 210,200 360,60 510,200 660,60 810,200" stroke="#00a8ff" stroke-width="3" fill="none" stroke-linejoin="round" class="line-flow"/>
+                            
+                            <!-- Puntos de anclaje iluminados -->
+                            <circle cx="60" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="210" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="360" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="510" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="660" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="810" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
+                        </svg>
+
+                        <!-- Botones Hexagonales Interactivos -->
+                        <button onclick="openLabModal(0)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 60px; top: 60px;">
+                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">01</span>
+                        </button>
+
+                        <button onclick="openLabModal(1)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 210px; top: 200px;">
+                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">02</span>
+                        </button>
+
+                        <button onclick="openLabModal(2)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 360px; top: 60px;">
+                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">03</span>
+                        </button>
+
+                        <button onclick="openLabModal(3)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 510px; top: 200px;">
+                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">04</span>
+                        </button>
+
+                        <button onclick="openLabModal(4)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 660px; top: 60px;">
+                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">05</span>
+                        </button>
+
+                        <button onclick="openLabModal(5)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 810px; top: 200px;">
+                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">06</span>
+                        </button>
+
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez / All rights reserved</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- MODAL DE LA MINI-VENTANA DE LABORATORIO -->
+    <div id="lab-modal" class="fixed inset-0 z-[30000] bg-black/90 backdrop-blur-sm hidden flex-col justify-center items-center p-4 transition-opacity duration-300" onclick="closeLabModal()">
+        
+        <div class="relative w-full max-w-3xl bg-[#0a0a0c] border border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.25)] hud-corners p-6 md:p-10 transform scale-95 transition-transform duration-300" id="lab-modal-content" onclick="event.stopPropagation()">
+            
+            <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                DATA_NODE_DECRYPTED
+            </div>
+
+            <div class="flex items-start justify-between border-b border-ctosBlue/30 pb-4 mb-6 mt-6 md:mt-2">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <span class="bg-ctosBlue text-black font-cyber font-bold px-3 py-1 text-sm shadow-[0_0_10px_rgba(0,168,255,0.8)] self-start sm:self-auto" id="lab-modal-id">LAB_00</span>
+                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest" id="lab-modal-title">Título del Laboratorio</h3>
+                </div>
+                
+                <button onclick="closeLabModal()" class="text-gray-500 hover:text-red-500 transition-colors outline-none font-cyber font-bold text-xl ml-4 hover:scale-110 flex-shrink-0">
+                    [X]
+                </button>
+            </div>
+
+            <div class="min-h-[120px] mb-8 bg-black/50 p-4 border border-white/5">
+                <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed whitespace-pre-wrap break-words" id="lab-modal-desc"></p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 opacity-0 transition-opacity duration-500" id="lab-modal-actions">
+                <a href="#" id="lab-modal-pdf" target="_blank" rel="noopener noreferrer" class="flex-1 inline-flex items-center justify-center gap-3 border border-ctosBlue/50 bg-ctosBlue/10 hover:bg-ctosBlue hover:text-black text-ctosBlue font-cyber font-bold px-4 py-3 text-xs md:text-sm uppercase tracking-widest transition-all duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    [ DESCARGAR_REPORTE ]
+                </a>
+                <a href="#" id="lab-modal-web" target="_blank" rel="noopener noreferrer" class="flex-1 inline-flex items-center justify-center gap-3 border border-gray-500 bg-gray-900/40 hover:bg-white hover:border-white hover:text-black text-gray-300 font-cyber font-bold px-4 py-3 text-xs md:text-sm uppercase tracking-widest transition-all duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_LABORATORIO ]
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // BASE DE DATOS DE LABORATORIOS
+        const labsData = [
+            {
+                id: "LAB_01",
+                title: "Simple Case",
+                desc: "> ANALYZING NODE...\n> VULNERABILITY DETECTED.\n\nSe intercepta la petición de carga de imagen y se modifica el parámetro filename utilizando secuencias de salto de directorio estándar (../../../etc/passwd) para acceder y leer archivos confidenciales del sistema.",
+                pdf: "Reporte_Lab1.pdf",
+                link: "https://portswigger.net/web-security/file-path-traversal/lab-simple"
+            },
+            {
+                id: "LAB_02",
+                title: "Absolute Path Bypass",
+                desc: "> ANALYZING NODE...\n> FIREWALL BYPASSED.\n\nEl firewall bloquea secuencias relativas (../). La evasión se logra proporcionando la ruta absoluta del archivo (filename=/etc/passwd), demostrando que la aplicación confía ciegamente en rutas directas.",
+                pdf: "Reporte_Lab2.pdf",
+                link: "https://portswigger.net/web-security/file-path-traversal/lab-absolute-path-bypass"
+            },
+            {
+                id: "LAB_03",
+                title: "Stripped Non-Recursively",
+                desc: "> ANALYZING NODE...\n> FILTER COLLAPSED.\n\nEl sistema elimina la cadena '../' de forma no recursiva. La explotación requiere anidar la secuencia maliciosa dentro de sí misma (....//) para que, al limpiar, forme una secuencia válida (../).",
+                pdf: "Reporte_Lab3.pdf",
+                link: "https://portswigger.net/web-security/file-path-traversal/lab-sequences-stripped-non-recursively"
+            },
+            {
+                id: "LAB_04",
+                title: "Superfluous URL-Decode",
+                desc: "> ANALYZING NODE...\n> ENCODING INJECTION SUCCESSFUL.\n\nSe implementó ofuscación mediante doble codificación URL (%252e%252e%252f). El WAF lo permite pasar y el servidor backend realiza una doble decodificación, ejecutando el salto malicioso.",
+                pdf: "Reporte_Lab4.pdf",
+                link: "https://portswigger.net/web-security/file-path-traversal/lab-superfluous-url-decode"
+            },
+            {
+                id: "LAB_05",
+                title: "Validation Of Start Of Path",
+                desc: "> ANALYZING NODE...\n> PATH OVERRIDE.\n\nEl backend valida que la ruta inicie con un directorio base (/var/www/images/). Se satisface la regla y luego se encadenan secuencias de salto para retroceder a la raíz (/var/www/images/../../../etc/passwd).",
+                pdf: "Reporte_Lab5.pdf",
+                link: "https://portswigger.net/web-security/file-path-traversal/lab-validate-start-of-path"
+            },
+            {
+                id: "LAB_06",
+                title: "Null Byte Bypass",
+                desc: "> ANALYZING NODE...\n> MEMORY TERMINATION VULN.\n\nLa aplicación exige terminar en '.png'. Se vulnera inyectando un Null Byte (%00) antes de la extensión, forzando a la API C/C++ a terminar de leer la cadena prematuramente (../../../etc/passwd%00.png).",
+                pdf: "Reporte_Lab6.pdf",
+                link: "https://portswigger.net/web-security/file-path-traversal/lab-validate-file-extension-null-byte-bypass"
+            }
+        ];
+
+        let typeInterval;
+
+        function openLabModal(index) {
+            const data = labsData[index];
+            const modal = document.getElementById('lab-modal');
+            const modalContent = document.getElementById('lab-modal-content');
+            const titleEl = document.getElementById('lab-modal-title');
+            const descEl = document.getElementById('lab-modal-desc');
+            const idEl = document.getElementById('lab-modal-id');
+            const actionsEl = document.getElementById('lab-modal-actions');
+            
+            document.querySelectorAll('.hex-btn').forEach((btn, i) => {
+                if(i === index) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            idEl.innerText = data.id;
+            titleEl.innerText = data.title;
+            document.getElementById('lab-modal-pdf').href = data.pdf;
+            document.getElementById('lab-modal-web').href = data.link;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+
+            actionsEl.classList.add('opacity-0');
+            descEl.textContent = "";
+            clearInterval(typeInterval);
+
+            let i = 0;
+            const textToType = data.desc;
+            
+            typeInterval = setInterval(() => {
+                descEl.textContent += textToType.charAt(i);
+                i++;
+                if (i >= textToType.length) {
+                    clearInterval(typeInterval);
+                    actionsEl.classList.remove('opacity-0');
+                }
+            }, 15);
+            
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLabModal() {
+            const modal = document.getElementById('lab-modal');
+            const modalContent = document.getElementById('lab-modal-content');
+            
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            
+            document.querySelectorAll('.hex-btn').forEach(btn => btn.classList.remove('active'));
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

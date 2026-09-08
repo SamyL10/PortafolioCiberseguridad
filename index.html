@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>smrunner //Portafolio</title>
+    <title>smrunner // ctOS Database Access</title>
     
-    <!-- Fuentes de Google: Fira Code (Terminal) y Orbitron (Estilo Watch_Dogs) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS por CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -93,11 +91,19 @@
         #ctos-boot {
             transition: opacity 0.5s ease-out;
         }
+
+        /* Ocultar barra de desplazamiento en el menú si aparece */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="font-mono text-gray-300 min-h-screen flex flex-col">
 
-    <!-- PANTALLA DE ARRANQUE ctOS -->
     <div id="ctos-boot" class="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center">
         <div class="text-ctosBlue font-cyber text-2xl md:text-4xl font-bold tracking-widest animate-pulse mb-4">
             CONECTANDO A RED ctOS...
@@ -108,25 +114,19 @@
         </div>
     </div>
 
-    <!-- Capas de fondo animado -->
     <canvas id="matrix-bg"></canvas>
     <div class="vignette"></div>
     <div class="scanlines"></div>
     
-    <!-- Indicador de cámara superior -->
     <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
         <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
         <span>REC</span>
     </div>
 
-    <!-- 1. ENCABEZADO ORDENADO CON LOGO ESCUDO REACTIVO Y ALIAS REUBICADO -->
     <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full overflow-hidden group">
-        <div class="max-w-[1400px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+        <div class="max-w-[1800px] mx-auto flex flex-col 2xl:flex-row items-center justify-between gap-6">
 
-            <!-- Izquierda: Logo + Identidad + Telemetría -->
-            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
-                
-                <!-- Logo Escudo / Zorro ctOS Reactivo -->
+            <div class="flex items-center gap-4 w-full 2xl:w-auto justify-center 2xl:justify-start border-b border-white/10 2xl:border-none pb-3 2xl:pb-0">
                 <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
                     <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
                         <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
@@ -134,7 +134,6 @@
                     </svg>
                 </div>
 
-                <!-- Info de texto -->
                 <div class="flex flex-col items-start overflow-hidden">
                     <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
                         <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">
@@ -144,7 +143,6 @@
                             SAMUEL LÓPEZ GÓMEZ
                         </h1>
                     </div>
-                    <!-- Información Recuperada con ALIAS estilizado en Orbitron -->
                     <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
                         <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
                         <span class="text-gray-600">|</span>
@@ -153,27 +151,24 @@
                 </div>
             </div>
 
-            <!-- Derecha: Menú de navegación alineado -->
-            <nav class="flex flex-nowrap items-center justify-center xl:justify-end gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto overflow-x-auto whitespace-nowrap pb-1 xl:pb-0">
-                <a href="#inicio" class="text-white hover:text-ctosBlue transition-colors">> INICIO</a>
-                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors">> PARCIAL_1</a>
-                <a href="#parcial2" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_2</a>
-                <a href="#parcial3" class="text-gray-600 hover:text-white transition-colors cursor-not-allowed" title="Acceso Denegado">> PARCIAL_3</a>
-                <a href="#certificaciones" class="text-gray-400 hover:text-ctosBlue transition-colors">> CERTIFICACIONES</a>
-                <a href="#contacto" class="text-ctosBlue hover:text-white transition-colors">> CONTACTO</a>
+            <nav class="flex flex-nowrap items-center justify-start 2xl:ml-auto gap-3 md:gap-5 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full 2xl:w-auto overflow-x-auto whitespace-nowrap pb-1 2xl:pb-0 scrollbar-hide">
+                <a href="#inicio" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="#" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="#contacto" class="text-gray-400 hover:text-white transition-colors flex-shrink-0">> CONTACTO</a>
             </nav>
             
         </div>
     </header>
 
-    <!-- Contenedor Principal (Dashboard Grid) -->
     <main class="max-w-6xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow" id="inicio">
         
         <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 hud-corners shadow-2xl flex flex-col gap-10">
             
-            <!-- 2. Presentación (Ancho Completo - Con Badge Esquina Superior Derecha) -->
             <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group">
-                <!-- Adorno / Badge en la esquina superior derecha con animación -->
                 <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
                     DATABASE_ENTRY_01
                 </div>
@@ -199,10 +194,8 @@
                 </div>
             </section>
 
-            <!-- Grid de Dos Columnas para Perfil y Stack Técnico -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 
-                <!-- 3. Perfil (Columna Izquierda con Badge HUD) -->
                 <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
                     <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
                         CITIZEN_DETAILS
@@ -233,7 +226,6 @@
                     </div>
                 </section>
 
-                <!-- 4. Stack (Columna Derecha con Badge HUD y título actualizado) -->
                 <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative">
                     <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
                         SYSTEM_SPECS
@@ -264,7 +256,6 @@
                 </section>
             </div>
 
-            <!-- 5. Formulario (Con Badge HUD) -->
             <section id="contacto" class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative scroll-mt-28 mt-4">
                 <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
                     ESTABLISH_LINK
@@ -275,7 +266,6 @@
                     <h2 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest">Contacto Directo</h2>
                 </div>
                 
-                <!-- -->
                 <form action="https://formspree.io/f/maewgqvk" method="POST" class="space-y-4 font-mono text-sm tracking-wide w-full max-w-4xl mx-auto">
                     <input type="hidden" name="_autoresponse" value="CONEXIÓN ESTABLECIDA. He recibido tu mensaje en mi terminal. Responderé tu ping pronto. - Sam.">
                     
@@ -303,13 +293,11 @@
         </div>
     </main>
 
-    <!-- Pie de página -->
     <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
         <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
         <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
     </footer>
 
-    <!-- SCRIPTS -->
     <script>
         // 1. SISTEMA DE ARRANQUE
         window.addEventListener('load', () => {
@@ -386,6 +374,20 @@
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+        });
+
+        // 4. SCROLL SUAVE PARA LA NAVEGACIÓN INTERNA
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                // Solo activa el scroll si el href tiene más de 1 caracter (ej. #contacto)
+                if(a.getAttribute('href').length > 1) {
+                    const target = document.querySelector(a.getAttribute('href'));
+                    if (target) { 
+                        e.preventDefault(); 
+                        target.scrollIntoView({ behavior: 'smooth' }); 
+                    }
+                }
+            });
         });
     </script>
 </body>

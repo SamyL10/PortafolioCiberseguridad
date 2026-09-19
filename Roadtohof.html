@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Act. 06: Road to Hall of Fame // ctOS Database</title>
 
-    <!-- Fuentes de Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS por CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -60,16 +58,14 @@
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Animación de flotación base para los hexágonos */
         @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
-            100% { transform: translateY(0px); }
+            0% { transform: translate(-50%, -50%) translateY(0px); }
+            50% { transform: translate(-50%, -50%) translateY(-4px); }
+            100% { transform: translate(-50%, -50%) translateY(0px); }
         }
         .hex-float { animation: float 3s ease-in-out infinite; }
         .hex-float-delayed { animation: float 3s ease-in-out infinite 1.5s; }
 
-        /* Flujo de Datos animado en la línea conectora */
         @keyframes data-flow {
             to { stroke-dashoffset: -24; }
         }
@@ -78,27 +74,13 @@
             animation: data-flow 1s linear infinite;
         }
 
-        /* Reactividad de los Hexágonos */
-        .hex-btn svg {
-            transition: all 0.3s ease;
-        }
-        .hex-btn:hover svg {
-            stroke: #ffffff;
-            filter: drop-shadow(0 0 12px #00a8ff);
-        }
-        .hex-btn.active {
-            transform: scale(1.15) !important;
-            z-index: 20;
-        }
-        .hex-btn.active svg { 
-            fill: rgba(0, 168, 255, 0.3); 
-            stroke: #ffffff;
-            filter: drop-shadow(0 0 15px #00a8ff);
-        }
-        .hex-btn.active span { 
-            color: #fff; 
-            text-shadow: 0 0 8px #00a8ff; 
-        }
+        .hex-btn svg { transition: all 0.3s ease; }
+        .hex-btn:hover svg { stroke: #ffffff; filter: drop-shadow(0 0 12px #00a8ff); }
+        
+        /* Modificadores para cuando está activo el modal */
+        .hex-btn.active { z-index: 20; }
+        .hex-btn.active svg { fill: rgba(0, 168, 255, 0.3); stroke: #ffffff; filter: drop-shadow(0 0 15px #00a8ff); }
+        .hex-btn.active span { color: #fff; text-shadow: 0 0 8px #00a8ff; }
     </style>
 </head>
 <body class="font-mono text-gray-300 min-h-screen flex flex-col">
@@ -124,12 +106,8 @@
                 </div>
                 <div class="flex flex-col items-start overflow-hidden">
                     <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
-                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">
-                            SYS_ACTIVE
-                        </div>
-                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">
-                            SAMUEL LÓPEZ GÓMEZ
-                        </h1>
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">SYS_ACTIVE</div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">SAMUEL LÓPEZ GÓMEZ</h1>
                     </div>
                     <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
                         <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
@@ -145,14 +123,14 @@
                 <a href="Parcial2.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_2</a>
                 <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
                 <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
-                <a href="Actividad6.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="Roadtohof.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> ROAD_TO_HOF</a>
                 <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
                 <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
             </nav>
         </div>
     </header>
 
-    <main class="max-w-5xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 flex-grow">
+    <main class="max-w-6xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 flex-grow">
         
         <div class="mb-6">
             <a href="Parcial1.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
@@ -176,76 +154,81 @@
                 </div>
             </div>
 
-            <!-- ROADMAP ESTILO SKILL TREE -->
-            <section class="relative pt-2 pb-6 w-full">
-                <p class="font-mono text-gray-400 text-xs uppercase tracking-widest text-center mb-6">> SELECCIONE UN NODO DE VULNERABILIDAD PARA DESENCRIPTAR <</p>
+            <!-- ROADMAP ESTILO SKILL TREE (TOTALMENTE FLUIDO Y RESPONSIVO) -->
+            <section class="relative pt-8 pb-16 w-full mt-2 overflow-hidden">
+                <p class="font-mono text-ctosBlue text-xs uppercase tracking-widest text-center mb-10 drop-shadow-[0_0_5px_rgba(0,168,255,0.8)]">> SELECCIONE UN NODO DE VULNERABILIDAD PARA DESENCRIPTAR <</p>
                 
-                <div class="w-full overflow-x-auto scrollbar-hide py-8 px-4 md:px-0">
+                <!-- Contenedor Responsivo del Mapa -->
+                <div class="relative w-full max-w-[1000px] mx-auto" style="aspect-ratio: 1000 / 300;">
                     
-                    <div class="relative w-[1000px] min-w-[1000px] h-[260px] mx-auto">
+                    <!-- Línea Central Brillante -->
+                    <div class="absolute top-1/2 left-[5%] right-[5%] h-1 bg-ctosBlue/40 -translate-y-1/2 shadow-[0_0_10px_rgba(0,168,255,0.8)] z-0 pointer-events-none"></div>
+
+                    <!-- SVG Vectorial Fluido -->
+                    <svg viewBox="0 0 1000 300" class="absolute inset-0 w-full h-full z-0 pointer-events-none">
+                        <!-- Línea base estática -->
+                        <polyline points="100,75 260,225 420,75 580,225 740,75 900,225" stroke="#00a8ff" stroke-width="4" fill="none" stroke-linejoin="round" opacity="0.15"/>
+                        <!-- Línea animada -->
+                        <polyline points="100,75 260,225 420,75 580,225 740,75 900,225" stroke="#00a8ff" stroke-width="3" fill="none" stroke-linejoin="round" class="line-flow"/>
                         
-                        <div class="absolute top-1/2 left-8 right-8 h-1 bg-ctosBlue/40 -translate-y-1/2 z-0 shadow-[0_0_10px_rgba(0,168,255,0.8)]"></div>
+                        <!-- Puntos de anclaje traseros -->
+                        <circle cx="100" cy="75" r="8" fill="#00a8ff" opacity="0.6"/>
+                        <circle cx="260" cy="225" r="8" fill="#00a8ff" opacity="0.6"/>
+                        <circle cx="420" cy="75" r="8" fill="#00a8ff" opacity="0.6"/>
+                        <circle cx="580" cy="225" r="8" fill="#00a8ff" opacity="0.6"/>
+                        <circle cx="740" cy="75" r="8" fill="#00a8ff" opacity="0.6"/>
+                        <circle cx="900" cy="225" r="8" fill="#00a8ff" opacity="0.6"/>
+                    </svg>
 
-                        <svg class="absolute inset-0 w-full h-full pointer-events-none z-0">
-                            <!-- Línea Base opaca -->
-                            <polyline points="100,60 260,200 420,60 580,200 740,60 900,200" stroke="#00a8ff" stroke-width="4" fill="none" stroke-linejoin="round" opacity="0.15"/>
-                            
-                            <!-- Línea de flujo de datos animada -->
-                            <polyline points="100,60 260,200 420,60 580,200 740,60 900,200" stroke="#00a8ff" stroke-width="3" fill="none" stroke-linejoin="round" class="line-flow"/>
-                            
-                            <!-- Puntos de anclaje iluminados -->
-                            <circle cx="100" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="260" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="420" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="580" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="740" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="900" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
+                    <!-- Hexágonos Posicionados con Porcentajes (Nunca se desalinean) -->
+                    <!-- Nodo 01 -->
+                    <button onclick="openLabModal(0)" class="absolute z-10 w-[10%] min-w-[50px] max-w-[90px] aspect-square hex-float hex-btn outline-none" style="left: 10%; top: 25%;">
+                        <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                            <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
                         </svg>
+                        <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-sm md:text-xl transition-all pointer-events-none">01</span>
+                    </button>
 
-                        <!-- Botones Hexagonales Interactivos -->
-                        <button onclick="openLabModal(0)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 100px; top: 60px;">
-                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
-                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
-                            </svg>
-                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">01</span>
-                        </button>
+                    <!-- Nodo 02 -->
+                    <button onclick="openLabModal(1)" class="absolute z-10 w-[10%] min-w-[50px] max-w-[90px] aspect-square hex-float-delayed hex-btn outline-none" style="left: 26%; top: 75%;">
+                        <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                            <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-sm md:text-xl transition-all pointer-events-none">02</span>
+                    </button>
 
-                        <button onclick="openLabModal(1)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 260px; top: 200px;">
-                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
-                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
-                            </svg>
-                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">02</span>
-                        </button>
+                    <!-- Nodo 03 -->
+                    <button onclick="openLabModal(2)" class="absolute z-10 w-[10%] min-w-[50px] max-w-[90px] aspect-square hex-float hex-btn outline-none" style="left: 42%; top: 25%;">
+                        <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                            <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-sm md:text-xl transition-all pointer-events-none">03</span>
+                    </button>
 
-                        <button onclick="openLabModal(2)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 420px; top: 60px;">
-                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
-                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
-                            </svg>
-                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">03</span>
-                        </button>
+                    <!-- Nodo 04 -->
+                    <button onclick="openLabModal(3)" class="absolute z-10 w-[10%] min-w-[50px] max-w-[90px] aspect-square hex-float-delayed hex-btn outline-none" style="left: 58%; top: 75%;">
+                        <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                            <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-sm md:text-xl transition-all pointer-events-none">04</span>
+                    </button>
 
-                        <button onclick="openLabModal(3)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 580px; top: 200px;">
-                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
-                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
-                            </svg>
-                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">04</span>
-                        </button>
+                    <!-- Nodo 05 -->
+                    <button onclick="openLabModal(4)" class="absolute z-10 w-[10%] min-w-[50px] max-w-[90px] aspect-square hex-float hex-btn outline-none" style="left: 74%; top: 25%;">
+                        <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                            <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-sm md:text-xl transition-all pointer-events-none">05</span>
+                    </button>
 
-                        <button onclick="openLabModal(4)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 740px; top: 60px;">
-                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
-                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
-                            </svg>
-                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">05</span>
-                        </button>
+                    <!-- Nodo 06 -->
+                    <button onclick="openLabModal(5)" class="absolute z-10 w-[10%] min-w-[50px] max-w-[90px] aspect-square hex-float-delayed hex-btn outline-none" style="left: 90%; top: 75%;">
+                        <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
+                            <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-sm md:text-xl transition-all pointer-events-none">06</span>
+                    </button>
 
-                        <button onclick="openLabModal(5)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 900px; top: 200px;">
-                            <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
-                                <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
-                            </svg>
-                            <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">06</span>
-                        </button>
-
-                    </div>
                 </div>
             </section>
 
@@ -253,7 +236,7 @@
     </main>
 
     <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
-        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez / All rights reserved.</p>
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
         <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
     </footer>
 
@@ -286,9 +269,9 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     [ DESCARGAR_REPORTE ]
                 </a>
-                <a href="#" id="lab-modal-web" target="_blank" rel="noopener noreferrer" class="flex-1 inline-flex items-center justify-center gap-3 border border-gray-500 bg-gray-900/40 hover:bg-white hover:border-white hover:text-black text-gray-300 font-cyber font-bold px-4 py-3 text-xs md:text-sm uppercase tracking-widest transition-all duration-300">
+                <a href="#" id="lab-modal-web" class="flex-1 inline-flex items-center justify-center gap-3 border border-gray-500 bg-gray-900/40 hover:bg-white hover:border-white hover:text-black text-gray-300 font-cyber font-bold px-4 py-3 text-xs md:text-sm uppercase tracking-widest transition-all duration-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                    [ ABRIR_LABORATORIO ]
+                    [ ABRIR_WALKTHROUGH ]
                 </a>
             </div>
 
@@ -296,7 +279,7 @@
     </div>
 
     <script>
-        // BASE DE DATOS DE LABORATORIOS ACTUALIZADA
+        // BASE DE DATOS DE LABORATORIOS
         const labsData = [
             {
                 id: "LAB_01",
@@ -310,35 +293,35 @@
                 title: "Actividad 08 Lab: Traversal sequences blocked with absolute path bypass",
                 desc: "> ANALYZING NODE...\n> FIREWALL BYPASSED.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Absolute path bypass. En este escenario, el mecanismo de defensa bloquea las secuencias relativas clásicas (../). La vulnerabilidad se explota proporcionando de manera directa la ruta absoluta del archivo objetivo (filename=/etc/passwd), lo que demuestra que la aplicación valida el salto relativo pero procesa rutas absolutas sin restricciones.",
                 pdf: "Reporte_Lab2.pdf",
-                link: "https://portswigger.net/web-security/file-path-traversal/lab-absolute-path-bypass"
+                link: "javascript:void(0);"
             },
             {
                 id: "LAB_03",
                 title: "Actividad 09 Lab: Traversal sequences stripped non-recursively",
                 desc: "> ANALYZING NODE...\n> FILTER COLLAPSED.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Sequences stripped non-recursively. Aquí, el sistema filtra y elimina la cadena '../', pero lo hace de forma no recursiva. La explotación requiere anidar la secuencia maliciosa dentro de sí misma (....//) para que, al aplicarse el filtro de limpieza una sola vez, la estructura resultante forme una secuencia válida (../) que permite el acceso.",
                 pdf: "Reporte_Lab3.pdf",
-                link: "https://portswigger.net/web-security/file-path-traversal/lab-sequences-stripped-non-recursively"
+                link: "javascript:void(0);"
             },
             {
                 id: "LAB_04",
                 title: "Actividad 10 Lab: Traversal sequences stripped with superfluous URL-decode",
                 desc: "> ANALYZING NODE...\n> ENCODING INJECTION SUCCESSFUL.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Superfluous URL-decode. El WAF bloquea los caracteres de salto de directorio convencionales. Para evadir esta protección, se implementa una técnica de ofuscación mediante doble codificación URL (%252e%252e%252f). El filtro permite pasar la cadena ofuscada y el servidor backend realiza una doble decodificación que desencadena la ejecución del salto.",
                 pdf: "Reporte_Lab4.pdf",
-                link: "https://portswigger.net/web-security/file-path-traversal/lab-superfluous-url-decode"
+                link: "javascript:void(0);"
             },
             {
                 id: "LAB_05",
                 title: "Actividad 11 Lab: Validation of start of path",
                 desc: "> ANALYZING NODE...\n> PATH OVERRIDE.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Validation of start of path. El sistema valida estrictamente que la ruta proporcionada inicie con un directorio base obligatorio (ej. /var/www/images/). El ataque se concreta cumpliendo esta regla inicial y posteriormente encadenando secuencias de salto para retroceder hasta la raíz y leer el archivo objetivo (filename=/var/www/images/../../../etc/passwd).",
                 pdf: "Reporte_Lab5.pdf",
-                link: "https://portswigger.net/web-security/file-path-traversal/lab-validate-start-of-path"
+                link: "javascript:void(0);"
             },
             {
                 id: "LAB_06",
                 title: "Actividad 12 Lab: Validation of file extension with null byte bypass",
                 desc: "> ANALYZING NODE...\n> MEMORY TERMINATION VULN.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Null byte bypass. La aplicación exige que la ruta termine con una extensión de imagen válida (.png). Esta validación se evade inyectando un byte nulo (%00) justo antes de la extensión exigida. Esto provoca que la API subyacente termine de leer la cadena prematuramente (../../../etc/passwd%00.png) y devuelva el archivo confidencial.",
                 pdf: "Reporte_Lab6.pdf",
-                link: "https://portswigger.net/web-security/file-path-traversal/lab-validate-file-extension-null-byte-bypass"
+                link: "javascript:void(0);"
             }
         ];
 

@@ -112,7 +112,7 @@
         <span>REC</span>
     </div>
 
-    <!-- ENCABEZADO CORREGIDO -->
+    <!-- ENCABEZADO -->
     <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
         <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
@@ -139,18 +139,14 @@
                 </div>
             </div>
 
-            <!-- Ajustado gap-4 (antes 5) y max-w-full para ayudar a que encaje -->
             <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
                 <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
                 <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
-                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_2</a>
+                <a href="Parcial2.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_2</a>
                 <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
                 <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
-                <a href="Roadtohof.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> ROAD_TO_HOF</a>
-                
-                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> CONTACTO</a>
-                
-                <!-- ESTE ES EL TRUCO: Un bloque invisible que fuerza un margen físico al final -->
+                <a href="Actividad6.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
                 <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
             </nav>
         </div>
@@ -186,63 +182,63 @@
                 
                 <div class="w-full overflow-x-auto scrollbar-hide py-8 px-4 md:px-0">
                     
-                    <div class="relative w-[880px] h-[260px] md:mx-auto">
+                    <div class="relative w-[1000px] min-w-[1000px] h-[260px] mx-auto">
                         
                         <div class="absolute top-1/2 left-8 right-8 h-1 bg-ctosBlue/40 -translate-y-1/2 z-0 shadow-[0_0_10px_rgba(0,168,255,0.8)]"></div>
 
                         <svg class="absolute inset-0 w-full h-full pointer-events-none z-0">
                             <!-- Línea Base opaca -->
-                            <polyline points="60,60 210,200 360,60 510,200 660,60 810,200" stroke="#00a8ff" stroke-width="4" fill="none" stroke-linejoin="round" opacity="0.15"/>
+                            <polyline points="100,60 260,200 420,60 580,200 740,60 900,200" stroke="#00a8ff" stroke-width="4" fill="none" stroke-linejoin="round" opacity="0.15"/>
                             
                             <!-- Línea de flujo de datos animada -->
-                            <polyline points="60,60 210,200 360,60 510,200 660,60 810,200" stroke="#00a8ff" stroke-width="3" fill="none" stroke-linejoin="round" class="line-flow"/>
+                            <polyline points="100,60 260,200 420,60 580,200 740,60 900,200" stroke="#00a8ff" stroke-width="3" fill="none" stroke-linejoin="round" class="line-flow"/>
                             
                             <!-- Puntos de anclaje iluminados -->
-                            <circle cx="60" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="210" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="360" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="510" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="660" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
-                            <circle cx="810" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="100" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="260" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="420" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="580" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="740" cy="60" r="8" fill="#00a8ff" opacity="0.6"/>
+                            <circle cx="900" cy="200" r="8" fill="#00a8ff" opacity="0.6"/>
                         </svg>
 
                         <!-- Botones Hexagonales Interactivos -->
-                        <button onclick="openLabModal(0)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 60px; top: 60px;">
+                        <button onclick="openLabModal(0)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 100px; top: 60px;">
                             <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
                                 <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
                             </svg>
                             <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">01</span>
                         </button>
 
-                        <button onclick="openLabModal(1)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 210px; top: 200px;">
+                        <button onclick="openLabModal(1)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 260px; top: 200px;">
                             <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
                                 <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
                             </svg>
                             <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">02</span>
                         </button>
 
-                        <button onclick="openLabModal(2)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 360px; top: 60px;">
+                        <button onclick="openLabModal(2)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 420px; top: 60px;">
                             <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
                                 <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
                             </svg>
                             <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">03</span>
                         </button>
 
-                        <button onclick="openLabModal(3)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 510px; top: 200px;">
+                        <button onclick="openLabModal(3)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 580px; top: 200px;">
                             <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
                                 <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
                             </svg>
                             <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">04</span>
                         </button>
 
-                        <button onclick="openLabModal(4)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 660px; top: 60px;">
+                        <button onclick="openLabModal(4)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float hex-btn" style="left: 740px; top: 60px;">
                             <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
                                 <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
                             </svg>
                             <span class="absolute inset-0 flex items-center justify-center font-cyber font-bold text-ctosBlue text-lg md:text-xl transition-all">05</span>
                         </button>
 
-                        <button onclick="openLabModal(5)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 810px; top: 200px;">
+                        <button onclick="openLabModal(5)" class="absolute z-10 w-16 h-16 md:w-20 md:h-20 -ml-8 -mt-8 md:-ml-10 md:-mt-10 outline-none group hex-float-delayed hex-btn" style="left: 900px; top: 200px;">
                             <svg viewBox="0 0 100 100" class="w-full h-full text-ctosBlue fill-[#0a0a0c] stroke-current stroke-[4px] drop-shadow-[0_0_8px_rgba(0,168,255,0.6)]">
                                 <polygon points="50 3, 95 25, 95 75, 50 97, 5 75, 5 25" />
                             </svg>
@@ -257,14 +253,14 @@
     </main>
 
     <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
-        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez / All rights reserved</p>
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez / All rights reserved.</p>
         <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
     </footer>
 
     <!-- MODAL DE LA MINI-VENTANA DE LABORATORIO -->
     <div id="lab-modal" class="fixed inset-0 z-[30000] bg-black/90 backdrop-blur-sm hidden flex-col justify-center items-center p-4 transition-opacity duration-300" onclick="closeLabModal()">
         
-        <div class="relative w-full max-w-3xl bg-[#0a0a0c] border border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.25)] hud-corners p-6 md:p-10 transform scale-95 transition-transform duration-300" id="lab-modal-content" onclick="event.stopPropagation()">
+        <div class="relative w-full max-w-4xl bg-[#0a0a0c] border border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.25)] hud-corners p-6 md:p-10 transform scale-95 transition-transform duration-300" id="lab-modal-content" onclick="event.stopPropagation()">
             
             <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
                 DATA_NODE_DECRYPTED
@@ -273,7 +269,7 @@
             <div class="flex items-start justify-between border-b border-ctosBlue/30 pb-4 mb-6 mt-6 md:mt-2">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                     <span class="bg-ctosBlue text-black font-cyber font-bold px-3 py-1 text-sm shadow-[0_0_10px_rgba(0,168,255,0.8)] self-start sm:self-auto" id="lab-modal-id">LAB_00</span>
-                    <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest" id="lab-modal-title">Título del Laboratorio</h3>
+                    <h3 class="text-lg md:text-xl lg:text-2xl font-cyber font-bold text-white uppercase tracking-widest leading-tight" id="lab-modal-title">Título del Laboratorio</h3>
                 </div>
                 
                 <button onclick="closeLabModal()" class="text-gray-500 hover:text-red-500 transition-colors outline-none font-cyber font-bold text-xl ml-4 hover:scale-110 flex-shrink-0">
@@ -281,7 +277,7 @@
                 </button>
             </div>
 
-            <div class="min-h-[120px] mb-8 bg-black/50 p-4 border border-white/5">
+            <div class="min-h-[140px] mb-8 bg-black/50 p-4 border border-white/5">
                 <p class="font-mono text-sm md:text-base text-gray-300 leading-relaxed whitespace-pre-wrap break-words" id="lab-modal-desc"></p>
             </div>
 
@@ -300,47 +296,47 @@
     </div>
 
     <script>
-        // BASE DE DATOS DE LABORATORIOS
+        // BASE DE DATOS DE LABORATORIOS ACTUALIZADA
         const labsData = [
             {
                 id: "LAB_01",
-                title: "Simple Case",
-                desc: "> ANALYZING NODE...\n> VULNERABILITY DETECTED.\n\nSe intercepta la petición de carga de imagen y se modifica el parámetro filename utilizando secuencias de salto de directorio estándar (../../../etc/passwd) para acceder y leer archivos confidenciales del sistema.",
-                pdf: "Reporte_Lab1.pdf",
-                link: "https://portswigger.net/web-security/file-path-traversal/lab-simple"
+                title: "Actividad 07 Lab: File path traversal simple case",
+                desc: "> ANALYZING NODE...\n> VULNERABILITY DETECTED.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Simple case. En este entorno de prueba, se intercepta la petición encargada de cargar la imagen de un producto y se modifica el parámetro 'filename'. Utilizando secuencias de salto de directorio estándar (../../../etc/passwd), se logra evadir la ruta base para acceder y leer archivos confidenciales del sistema, evidenciando una falta total de saneamiento de datos por parte del servidor.",
+                pdf: "Actividad07.pdf",
+                link: "Actividad07.html"
             },
             {
                 id: "LAB_02",
-                title: "Absolute Path Bypass",
-                desc: "> ANALYZING NODE...\n> FIREWALL BYPASSED.\n\nEl firewall bloquea secuencias relativas (../). La evasión se logra proporcionando la ruta absoluta del archivo (filename=/etc/passwd), demostrando que la aplicación confía ciegamente en rutas directas.",
+                title: "Actividad 08 Lab: Traversal sequences blocked with absolute path bypass",
+                desc: "> ANALYZING NODE...\n> FIREWALL BYPASSED.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Absolute path bypass. En este escenario, el mecanismo de defensa bloquea las secuencias relativas clásicas (../). La vulnerabilidad se explota proporcionando de manera directa la ruta absoluta del archivo objetivo (filename=/etc/passwd), lo que demuestra que la aplicación valida el salto relativo pero procesa rutas absolutas sin restricciones.",
                 pdf: "Reporte_Lab2.pdf",
                 link: "https://portswigger.net/web-security/file-path-traversal/lab-absolute-path-bypass"
             },
             {
                 id: "LAB_03",
-                title: "Stripped Non-Recursively",
-                desc: "> ANALYZING NODE...\n> FILTER COLLAPSED.\n\nEl sistema elimina la cadena '../' de forma no recursiva. La explotación requiere anidar la secuencia maliciosa dentro de sí misma (....//) para que, al limpiar, forme una secuencia válida (../).",
+                title: "Actividad 09 Lab: Traversal sequences stripped non-recursively",
+                desc: "> ANALYZING NODE...\n> FILTER COLLAPSED.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Sequences stripped non-recursively. Aquí, el sistema filtra y elimina la cadena '../', pero lo hace de forma no recursiva. La explotación requiere anidar la secuencia maliciosa dentro de sí misma (....//) para que, al aplicarse el filtro de limpieza una sola vez, la estructura resultante forme una secuencia válida (../) que permite el acceso.",
                 pdf: "Reporte_Lab3.pdf",
                 link: "https://portswigger.net/web-security/file-path-traversal/lab-sequences-stripped-non-recursively"
             },
             {
                 id: "LAB_04",
-                title: "Superfluous URL-Decode",
-                desc: "> ANALYZING NODE...\n> ENCODING INJECTION SUCCESSFUL.\n\nSe implementó ofuscación mediante doble codificación URL (%252e%252e%252f). El WAF lo permite pasar y el servidor backend realiza una doble decodificación, ejecutando el salto malicioso.",
+                title: "Actividad 10 Lab: Traversal sequences stripped with superfluous URL-decode",
+                desc: "> ANALYZING NODE...\n> ENCODING INJECTION SUCCESSFUL.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Superfluous URL-decode. El WAF bloquea los caracteres de salto de directorio convencionales. Para evadir esta protección, se implementa una técnica de ofuscación mediante doble codificación URL (%252e%252e%252f). El filtro permite pasar la cadena ofuscada y el servidor backend realiza una doble decodificación que desencadena la ejecución del salto.",
                 pdf: "Reporte_Lab4.pdf",
                 link: "https://portswigger.net/web-security/file-path-traversal/lab-superfluous-url-decode"
             },
             {
                 id: "LAB_05",
-                title: "Validation Of Start Of Path",
-                desc: "> ANALYZING NODE...\n> PATH OVERRIDE.\n\nEl backend valida que la ruta inicie con un directorio base (/var/www/images/). Se satisface la regla y luego se encadenan secuencias de salto para retroceder a la raíz (/var/www/images/../../../etc/passwd).",
+                title: "Actividad 11 Lab: Validation of start of path",
+                desc: "> ANALYZING NODE...\n> PATH OVERRIDE.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Validation of start of path. El sistema valida estrictamente que la ruta proporcionada inicie con un directorio base obligatorio (ej. /var/www/images/). El ataque se concreta cumpliendo esta regla inicial y posteriormente encadenando secuencias de salto para retroceder hasta la raíz y leer el archivo objetivo (filename=/var/www/images/../../../etc/passwd).",
                 pdf: "Reporte_Lab5.pdf",
                 link: "https://portswigger.net/web-security/file-path-traversal/lab-validate-start-of-path"
             },
             {
                 id: "LAB_06",
-                title: "Null Byte Bypass",
-                desc: "> ANALYZING NODE...\n> MEMORY TERMINATION VULN.\n\nLa aplicación exige terminar en '.png'. Se vulnera inyectando un Null Byte (%00) antes de la extensión, forzando a la API C/C++ a terminar de leer la cadena prematuramente (../../../etc/passwd%00.png).",
+                title: "Actividad 12 Lab: Validation of file extension with null byte bypass",
+                desc: "> ANALYZING NODE...\n> MEMORY TERMINATION VULN.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Null byte bypass. La aplicación exige que la ruta termine con una extensión de imagen válida (.png). Esta validación se evade inyectando un byte nulo (%00) justo antes de la extensión exigida. Esto provoca que la API subyacente termine de leer la cadena prematuramente (../../../etc/passwd%00.png) y devuelva el archivo confidencial.",
                 pdf: "Reporte_Lab6.pdf",
                 link: "https://portswigger.net/web-security/file-path-traversal/lab-validate-file-extension-null-byte-bypass"
             }

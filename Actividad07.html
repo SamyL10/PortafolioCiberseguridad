@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 07: File Path Traversal Simple // ctOS Database</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 9999; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Estilo para imágenes clickeables */
+        .zoomable-img { cursor: zoom-in; transition: transform 0.3s ease, border-color 0.3s ease; }
+        .zoomable-img:hover { border-color: #00a8ff; transform: scale(1.02); }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">SYS_ACTIVE</div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">SAMUEL LÓPEZ GÓMEZ</h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="Parcial2.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_2</a>
+                
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html"text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <div class="mb-6">
+            <a href="Parcial2.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO_P2 ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <!-- ETIQUETA SUPERIOR -->
+            <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                VULN_DOSSIER
+            </div>
+
+            <!-- TÍTULO PRINCIPAL Y METADATA -->
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-ctosBlue/30 pb-6 mb-2">
+                <div class="flex items-start gap-4">
+                    <svg class="w-10 h-10 text-ctosBlue animate-pulse flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest leading-tight">Actividad 07 Lab: File path traversal simple case</h2>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-red-900/40 text-red-400 border border-red-500/50">CWE-22: Improper Limitation</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50">OWASP A01:2021</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BARRA DE DESCARGA -->
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-5 relative group flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest">
+                    ATTACHMENT_FOUND
+                </div>
+                <div class="flex items-center gap-4 w-full md:w-auto mt-2 md:mt-0">
+                    <div class="text-ctosBlue flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-base">Reporte Original</h4>
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Reporte de Actividad Detallado incluyendo referencias // Extensión: .pdf</p>
+                    </div>
+                </div>
+           
+                <a href="Actividad07.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full md:w-auto cursor-crosshair flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_ARCHIVO ]
+                </a>
+            </div>
+
+            <!-- INTRODUCCIÓN, TIPO Y OBJETIVOS (3 COLUMNAS) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Resumen -->
+                <section class="border border-white/10 bg-black/60 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-white/5 border-l border-b border-white/20 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-gray-400">EXECUTIVE_SUMMARY</div>
+                    <h3 class="text-sm font-bold text-ctosBlue uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Introducción
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow">
+                        Actividad en la cual se realiza el laboratorio <strong>File Path Traversal - Simple case</strong>. En este entorno, se intercepta la petición HTTP de una imagen y se modifica arbitrariamente el parámetro <code class="text-ctosBlue font-bold bg-white/5 px-1">filename</code>.
+                    </p>
+                </section>
+                <!-- Clasificación -->
+                <section class="border border-yellow-500/30 bg-yellow-900/10 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-yellow-500/20 border-l border-b border-yellow-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-yellow-400">EXPLOIT_TYPE</div>
+                    <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Clasificación
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow">
+                        <strong>Path Traversal (CWE-22)</strong>. Con el uso de secuencias de salto estándar (<code class="text-yellow-400 font-bold bg-yellow-500/10 px-1">../../../etc/passwd</code>), se evade la ruta base para leer archivos confidenciales, evidenciando la falta de validación.
+                    </p>
+                </section>
+                <!-- Objetivo -->
+                <section class="border border-green-500/30 bg-green-900/10 p-6 relative flex flex-col shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+                    <div class="absolute top-0 right-0 bg-green-500/20 border-l border-b border-green-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-green-400">MISSION_GOAL</div>
+                    <h3 class="text-sm font-bold text-green-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Objetivo
+                    </h3>
+                    <p class="text-sm leading-relaxed text-green-100/80 font-mono flex-grow">
+                        Recuperar exitosamente el contenido de <code class="text-green-400 font-bold">/etc/passwd</code> manipulando el parámetro de carga. Confirmar obtención y registrar el estado de <strong>"Solved"</strong>.
+                    </p>
+                </section>
+            </div>
+
+            <!-- MARCO TEÓRICO -->
+            <section class="border border-white/5 bg-black/40 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                    THEORY_CORE
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-6 pr-24">
+                    Mecanismo Interno y Teoría
+                </h3>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-ctosBlue font-bold uppercase text-sm mb-2">> ¿Por qué ocurre?</h4>
+                            <p class="text-sm font-mono text-gray-300 mb-3">Ocurre cuando el servidor concatena directamente la entrada del usuario con una ruta base sin aplicar validación canónica o filtros whitelist.</p>
+                            <div class="bg-[#050505] p-4 border border-white/10 text-xs font-mono">
+                                <div class="text-gray-500 mb-1">// Pseudocódigo backend vulnerable:</div>
+                                <div class="text-purple-400">$basePath = "/var/www/images/";</div>
+                                <div class="text-purple-400">$file = $_GET['filename'];</div>
+                                <div class="text-yellow-400 mt-2">$fullPath = $basePath . $file;</div>
+                                <div class="text-green-400 mt-1">return readFile($fullPath);</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Anatomía Linux -->
+                    <div class="bg-[#0a0a0c] border border-ctosBlue/30 p-5 shadow-inner">
+                        <div class="flex items-center justify-between border-b border-ctosBlue/20 pb-2 mb-4">
+                            <h4 class="text-white font-bold uppercase text-sm">> Kernel Path Resolution</h4>
+                        </div>
+                        <div class="space-y-2 font-mono text-xs">
+                            <div class="flex justify-between items-center bg-black p-2 border border-white/5">
+                                <span class="text-gray-500">Base:</span><span class="text-white">/var/www/images/</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black p-2 border border-white/5">
+                                <span class="text-gray-500">1er <span class="text-ctosBlue">..</span></span><span class="text-gray-300">/var/www/</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black p-2 border border-white/5">
+                                <span class="text-gray-500">2do <span class="text-ctosBlue">..</span></span><span class="text-gray-300">/var/</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black p-2 border border-white/5">
+                                <span class="text-gray-500">3er <span class="text-ctosBlue">..</span></span><span class="text-gray-300">/ (root)</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black p-2 border border-white/5">
+                                <span class="text-gray-500">4to <span class="text-ctosBlue">..</span></span><span class="text-yellow-400">/ (ignorado)</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-green-900/20 p-2 border border-green-500/30 mt-2">
+                                <span class="text-green-400 font-bold">+ etc/passwd</span><span class="text-green-300 font-bold">/etc/passwd</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SIMULADOR DINÁMICO (JS) -->
+            <section class="border border-ctosBlue/50 bg-[#050505] p-6 relative shadow-[0_0_15px_rgba(0,168,255,0.05)] mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                    SYS_SIMULATOR
+                </div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pr-24 border-b border-ctosBlue/30 pb-3">
+                    <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        Virtual Backend Sandbox
+                    </h3>
+                    <div class="flex gap-2 font-mono text-[10px]">
+                        <button onclick="setSimPayload('54.jpg')" class="px-2 py-1 bg-black border border-white/20 hover:border-ctosBlue text-gray-300 hover:text-white transition-colors">54.jpg</button>
+                        <button onclick="setSimPayload('/etc/passwd')" class="px-2 py-1 bg-red-900/20 border border-red-500/30 hover:bg-red-900/60 text-red-400 transition-colors">/etc/passwd</button>
+                        <button onclick="setSimPayload('../../../../etc/passwd')" class="px-2 py-1 bg-green-900/20 border border-green-500/30 hover:bg-green-900/60 text-green-400 transition-colors">../../../../etc/passwd</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-mono text-ctosBlue font-bold mb-1">GET /image?filename=</label>
+                        <input id="simInput" type="text" value="../../../../etc/passwd" oninput="runPathSimulation()" 
+                            class="w-full bg-[#0a0a0c] border border-white/20 focus:border-ctosBlue rounded-none px-4 py-2 font-mono text-sm text-white placeholder-gray-600 outline-none transition-colors">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-black border border-white/10 font-mono text-xs space-y-2">
+                            <span class="text-gray-500 block border-b border-white/10 pb-1 mb-2 uppercase tracking-widest">> EVALUACIÓN DEL SERVIDOR</span>
+                            <div class="text-gray-400">Ruta Base: <span class="text-ctosBlue">/var/www/images/</span></div>
+                            <div class="text-gray-400">Concatenación: <span id="simConcat" class="text-yellow-400 break-all"></span></div>
+                            <div class="text-gray-400 mt-2 pt-2 border-t border-white/5">Resultante: <span id="simResolved" class="font-bold break-all"></span></div>
+                            <div class="pt-2"><span id="simHttpStatus" class="px-2 py-0.5 border text-[10px] font-bold"></span></div>
+                        </div>
+                        
+                        <div class="p-4 bg-[#0a0a0c] border border-white/10 font-mono text-xs flex flex-col">
+                            <div class="flex justify-between items-center text-gray-500 border-b border-white/10 pb-1 mb-2 uppercase tracking-widest text-[10px]">
+                                <span>> RESPONSE BODY</span>
+                                <span id="simContentType"></span>
+                            </div>
+                            <div id="simOutputBox" class="flex-1 max-h-32 overflow-y-auto text-gray-300 whitespace-pre-wrap select-all leading-relaxed"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LÍNEA DE TIEMPO: LOS 17 PASOS -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    OPERATION_LOG
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-8 pr-24">
+                    Procedimiento Técnico Paso a Paso
+                </h3>
+                
+                <div class="relative pl-6 sm:pl-8 border-l-2 border-ctosBlue/20 space-y-12 font-mono text-sm text-gray-300">
+                    
+                    <!-- PASO 1 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">1</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Inicio de Proyecto Temporal</h4>
+                        <p class="mb-3">Apertura de Burp Suite Community Edition seleccionando la opción <code class="text-ctosBlue">Temporary project in memory</code>, ideal al no requerir persistencia de sesión.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/1.png" alt="Paso 1" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 2 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">2</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Configuración por Defecto</h4>
+                        <p class="mb-3">Se avanzó seleccionando <code class="text-ctosBlue">Use Burp defaults</code> para inicializar el análisis estándar del proxy.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/2.png" alt="Paso 2" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 3 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">3</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Apertura del Navegador Integrado</h4>
+                        <p class="mb-3">En la pestaña <em>Proxy > Intercept</em>, con la opción "Intercept is off", se ejecutó el botón <code class="bg-white/10 px-1 text-ctosBlue">Open browser</code>.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/3.png" alt="Paso 3" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 4 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">4</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Navegador Preconfigurado</h4>
+                        <p class="mb-3">El navegador (Chromium) se inició listo para enrutar todo el tráfico hacia el proxy local de Burp Suite.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/4.png" alt="Paso 4" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 5 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">5</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Acceso al Entorno Virtual</h4>
+                        <p class="mb-3">Desde PortSwigger se accedió a "File path traversal, simple case", instanciando el laboratorio temporal.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/5.png" alt="Paso 5" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 6 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">6</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Retención de Primera Petición</h4>
+                        <p class="mb-3">Con <code class="text-green-400">Intercept is ON</code> se atrapó la primera petición. Se dio "Forward All" para permitir la carga visual de la página web.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/6.png" alt="Paso 6" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 7 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">7</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Despliegue del Catálogo</h4>
+                        <p class="mb-3">El catálogo "We Like To Shop" cargó correctamente en el navegador, mostrando todas las imágenes de los productos.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/7.png" alt="Paso 7" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 8 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">8</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Selección del Producto</h4>
+                        <p class="mb-3">Se ingresó a <em>"Robot Home Security Buddy"</em> (View details). La página quedó incompleta a la espera de liberar el tráfico en Burp.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/8.png" alt="Paso 8" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 9 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">9</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Tráfico de Imágenes Retenido</h4>
+                        <p class="mb-3">En el proxy se observó que la carga de imágenes generó una petición GET aislada hacia <code class="text-yellow-400">/image?filename=54.jpg</code>.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/9.png" alt="Paso 9" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 10 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">10</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Renderizado de Endpoint</h4>
+                        <p class="mb-3">Al reenviar (Forward) las peticiones, la imagen cargó en la web, confirmando que la imagen depende exclusivamente de ese endpoint.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/10.png" alt="Paso 10" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 11 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">11</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Recarga Principal Controlada</h4>
+                        <p class="mb-3">Regresando al Home, se mantuvo "Intercept on" para aislar el flujo inicial de carga de la web principal.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/11.png" alt="Paso 11" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 12 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">12</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Confirmación del Vector</h4>
+                        <p class="mb-3">El Proxy evidenció un patrón masivo (<code class="text-ctosBlue">filename=13.jpg, 30.jpg...</code>). Esto confirmó que el parámetro es controlado por el usuario, siendo el vector idóneo de ataque.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/12.png" alt="Paso 12" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 13 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">13</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Aislamiento en Repeater</h4>
+                        <p class="mb-3">Se seleccionó la petición de la imagen (filename=54.jpg), enviándola al módulo <strong>Repeater</strong> para manipularla manualmente sin afectar la web.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/13.png" alt="Paso 13" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 14 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">14</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Test Base (Baseline)</h4>
+                        <p class="mb-3">La petición original se envió en Repeater, obteniendo <code class="text-green-400">200 OK</code> con el binario de imagen como respuesta estándar.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/14.png" alt="Paso 14" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 15 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-red-500 rounded-full flex items-center justify-center font-bold text-red-500 text-[10px]">15</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Intento Negativo</h4>
+                        <p class="mb-3">Se inyectó directamente la ruta <code class="text-red-400">/etc/passwd</code> (sin secuencias de salto). El servidor bloqueó la solicitud con <strong>400 Bad Request ("No such file")</strong>.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/15.png" alt="Paso 15" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 16 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-green-500 rounded-full flex items-center justify-center font-bold text-green-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">16</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Explotación Exitosa</h4>
+                        <p class="mb-3">Se usó el payload <code class="text-green-400 font-bold">../../../../etc/passwd</code>. El servidor procesó el retroceso y devolvió <code class="text-green-400">200 OK</code> volcando el contenido confidencial del sistema.</p>
+                        <div class="bg-black/80 border border-green-500/30 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/16.png" alt="Paso 16" class="w-full h-auto border border-green-500/20 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 17 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">17</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Validación Final</h4>
+                        <p class="mb-3">En el navegador, al actualizar, la plataforma cambió el estado de "Not solved" a <strong>Solved</strong>, certificando el éxito del ataque.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act07/17.png" alt="Paso 17" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ANÁLISIS DEL PAYLOAD -->
+            <section class="border border-white/5 bg-black p-6 relative shadow-inner mt-4">
+                <div class="absolute top-0 right-0 bg-red-900/40 border-l border-b border-red-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-red-500 tracking-widest">
+                    PAYLOAD_ANALYSIS
+                </div>
+                <h3 class="text-lg font-cyber font-bold text-white uppercase tracking-widest mb-4 border-b border-white/10 pb-2">
+                    Análisis Estructural del Payload
+                </h3>
+                
+                <div class="font-mono text-sm space-y-4">
+                    <div class="bg-[#050505] border border-white/10 p-4 font-bold text-xl text-center tracking-[0.2em] mb-6">
+                        <span class="text-ctosBlue">../../../../</span><span class="text-green-400">etc/passwd</span>
+                    </div>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-left border-collapse text-xs border border-white/10">
+                            <thead>
+                                <tr class="border-b border-white/10 text-gray-400 bg-white/5">
+                                    <th class="p-3 font-normal uppercase tracking-widest">Componente</th>
+                                    <th class="p-3 font-normal uppercase tracking-widest">Función en Sistema Unix/Linux</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                <tr class="hover:bg-white/5">
+                                    <td class="p-3 font-bold text-ctosBlue">../ (x4)</td>
+                                    <td class="p-3 text-gray-300 leading-relaxed">Operador de Retroceso Relativo. Retrocede niveles en la jerarquía desde la carpeta de imágenes hasta asegurar alcanzar la raíz (/). Si sobran <code class="text-ctosBlue">../</code>, Linux simplemente ignora el retroceso extra y se queda en la raíz.</td>
+                                </tr>
+                                <tr class="hover:bg-white/5">
+                                    <td class="p-3 font-bold text-green-400">etc/passwd</td>
+                                    <td class="p-3 text-gray-300 leading-relaxed">Ruta relativa hacia el archivo de gestión de usuarios de Linux. Al llegar al directorio raíz, el servidor web lee este archivo exitosamente.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROTOCOLO DE MITIGACIÓN -->
+            <section class="border border-green-500/30 bg-green-900/10 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-green-500/20 border-l border-b border-green-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-green-400 tracking-widest">
+                    SECURITY_PATCH
+                </div>
+                <h3 class="text-lg font-cyber font-bold text-green-400 uppercase tracking-widest mb-6 border-b border-green-500/20 pb-2">
+                    Mitigaciones Recomendadas (Defensa en Profundidad)
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 font-mono text-xs text-gray-300">
+                    
+                    <div class="bg-black/60 border border-green-500/20 p-4 hover:border-green-500/50 transition-colors">
+                        <h4 class="text-white font-bold text-sm mb-2 text-green-400">> 1. Canonicalización</h4>
+                        <p class="leading-relaxed mb-3">Resolver la ruta absoluta usando <code class="text-ctosBlue">realpath()</code> y verificar estrictamente que comience con el prefijo autorizado.</p>
+                        <div class="bg-black p-2 border border-white/5 text-[10px] text-gray-500">if (!str_starts_with($real, $base)) { abort(); }</div>
+                    </div>
+
+                    <div class="bg-black/60 border border-green-500/20 p-4 hover:border-green-500/50 transition-colors">
+                        <h4 class="text-white font-bold text-sm mb-2 text-green-400">> 2. Whitelisting Estricto</h4>
+                        <p class="leading-relaxed mb-3">Permitir solo caracteres alfanuméricos y extensiones de imagen predefinidas, rechazando secuencias con barras o puntos.</p>
+                        <div class="bg-black p-2 border border-white/5 text-[10px] text-gray-500">preg_match('/^[a-z0-9\-]+\.(jpg|png)$/i', $input)</div>
+                    </div>
+
+                    <div class="bg-black/60 border border-green-500/20 p-4 hover:border-green-500/50 transition-colors">
+                        <h4 class="text-white font-bold text-sm mb-2 text-green-400">> 3. Referencias Indirectas</h4>
+                        <p class="leading-relaxed mb-3">Nunca exponer nombres de archivo reales al usuario. Servir imágenes mediante identificadores (UUID) mapeados en DB.</p>
+                        <div class="bg-black p-2 border border-white/5 text-[10px] text-gray-500">GET /image?id=492a-bc91</div>
+                    </div>
+
+                    <div class="bg-black/60 border border-green-500/20 p-4 hover:border-green-500/50 transition-colors">
+                        <h4 class="text-white font-bold text-sm mb-2 text-green-400">> 4. Menor Privilegio</h4>
+                        <p class="leading-relaxed mb-3">Aislar los permisos del usuario ejecutor (<code class="text-ctosBlue">www-data</code>) para que no posea lectura sobre archivos fuera de la raíz web.</p>
+                        <div class="bg-black p-2 border border-white/5 text-[10px] text-gray-500">chmod 750 /var/www/images/</div>
+                    </div>
+
+                    <div class="bg-black/60 border border-green-500/20 p-4 hover:border-green-500/50 transition-colors">
+                        <h4 class="text-white font-bold text-sm mb-2 text-green-400">> 5. Sandboxing (Chroot)</h4>
+                        <p class="leading-relaxed mb-3">Ejecutar el servidor web en contenedores mínimos (Docker) o jaulas <code class="text-ctosBlue">chroot</code> con un /etc/passwd inofensivo.</p>
+                        <div class="bg-black p-2 border border-white/5 text-[10px] text-gray-500">docker run --read-only</div>
+                    </div>
+
+                    <div class="bg-black/60 border border-green-500/20 p-4 hover:border-green-500/50 transition-colors">
+                        <h4 class="text-white font-bold text-sm mb-2 text-green-400">> 6. Monitoreo WAF</h4>
+                        <p class="leading-relaxed mb-3">Habilitar reglas OWASP Core Rule Set en el WAF para bloquear patrones comunes de traversal como <code class="text-ctosBlue">\.\./</code></p>
+                        <div class="bg-black p-2 border border-white/5 text-[10px] text-gray-500">SecRule REQUEST_URI "@rx \.\./"</div>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- MODAL PARA AMPLIAR IMÁGENES -->
+    <div id="image-modal" class="fixed inset-0 z-[40000] bg-black/95 backdrop-blur-md hidden flex-col justify-center items-center p-4 transition-opacity duration-300 opacity-0" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors outline-none font-cyber font-bold text-2xl hover:scale-110">
+            [X]
+        </button>
+        <img id="modal-img-src" src="" alt="Captura Ampliada" class="max-w-full max-h-full border-2 border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.4)]" onclick="event.stopPropagation()">
+        <p class="text-ctosBlue font-mono text-xs mt-4 tracking-widest">> Clickea en cualquier parte para cerrar <</p>
+    </div>
+
+    <script>
+        // Lógica del Simulador de Nodos
+        function setSimPayload(val) {
+            const input = document.getElementById('simInput');
+            input.value = val;
+            runPathSimulation();
+        }
+
+        function runPathSimulation() {
+            const rawInput = document.getElementById('simInput').value.trim();
+            const concatEl = document.getElementById('simConcat');
+            const resolvedEl = document.getElementById('simResolved');
+            const statusEl = document.getElementById('simHttpStatus');
+            const typeEl = document.getElementById('simContentType');
+            const outBox = document.getElementById('simOutputBox');
+
+            const basePath = "/var/www/images/";
+            const concatenated = basePath + rawInput;
+            concatEl.innerText = concatenated;
+
+            let currentTokens = ["var", "www", "images"];
+            let parts = rawInput.split('/').filter(p => p !== "");
+            
+            if (rawInput === "/etc/passwd") {
+                resolvedEl.innerText = "/var/www/images/etc/passwd (Inexistente)";
+                resolvedEl.className = "text-red-500 font-bold break-all";
+                statusEl.innerText = "400 Bad Request";
+                statusEl.className = "px-2 py-0.5 border border-red-500/50 text-[10px] font-bold text-red-500 bg-red-900/20";
+                typeEl.innerText = "Content-Type: application/json";
+                outBox.className = "flex-1 max-h-32 overflow-y-auto text-red-400 whitespace-pre-wrap select-all leading-relaxed";
+                outBox.innerText = '{\n  "error": "Bad Request",\n  "message": "No such file"\n}';
+                return;
+            }
+
+            if (rawInput === "54.jpg" || rawInput.endsWith(".jpg")) {
+                resolvedEl.innerText = "/var/www/images/" + rawInput;
+                resolvedEl.className = "text-ctosBlue font-bold break-all";
+                statusEl.innerText = "200 OK";
+                statusEl.className = "px-2 py-0.5 border border-white/20 text-[10px] font-bold text-white bg-white/10";
+                typeEl.innerText = "Content-Type: image/jpeg";
+                outBox.className = "flex-1 max-h-32 overflow-y-auto text-gray-500 whitespace-pre-wrap select-all leading-relaxed";
+                outBox.innerText = `[Contenido binario JPEG de la imagen '${rawInput}']\n\n\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01...`;
+                return;
+            }
+
+            for (let part of parts) {
+                if (part === "..") {
+                    if (currentTokens.length > 0) currentTokens.pop();
+                } else if (part !== ".") {
+                    currentTokens.push(part);
+                }
+            }
+
+            const finalPath = "/" + currentTokens.join('/');
+            resolvedEl.innerText = finalPath;
+
+            if (finalPath === "/etc/passwd") {
+                resolvedEl.className = "text-green-400 font-bold break-all";
+                statusEl.innerText = "200 OK";
+                statusEl.className = "px-2 py-0.5 border border-green-500/50 text-[10px] font-bold text-green-400 bg-green-900/20";
+                typeEl.innerText = "Content-Type: image/jpeg (Payload in body)";
+                outBox.className = "flex-1 max-h-32 overflow-y-auto text-green-300 whitespace-pre-wrap select-all leading-relaxed";
+                outBox.innerText = `root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nsys:x:3:3:sys:/dev:/usr/sbin/nologin\nsync:x:4:65534:sync:/bin:/bin/sync\ngames:x:5:60:games:/usr/games:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\npeter:x:12001:12001::/home/peter:/bin/bash\ncarlos:x:12002:12002::/home/carlos:/bin/bash`;
+            } else {
+                resolvedEl.className = "text-yellow-400 font-bold break-all";
+                statusEl.innerText = "404 Not Found";
+                statusEl.className = "px-2 py-0.5 border border-yellow-500/50 text-[10px] font-bold text-yellow-400 bg-yellow-900/20";
+                typeEl.innerText = "Content-Type: text/html";
+                outBox.className = "flex-1 max-h-32 overflow-y-auto text-yellow-300 whitespace-pre-wrap select-all leading-relaxed";
+                outBox.innerText = `<!DOCTYPE html>\n<html>\n<head><title>404 Not Found</title></head>\n<body>\n<h1>Not Found</h1>\n<p>El archivo '${finalPath}' no existe en el servidor.</p>\n</body>\n</html>`;
+            }
+        }
+
+        window.onload = function() {
+            runPathSimulation();
+        };
+
+        // Modal de Imágenes
+        const imageModal = document.getElementById('image-modal');
+        const modalImgSrc = document.getElementById('modal-img-src');
+
+        function openImageModal(src) {
+            modalImgSrc.src = src;
+            imageModal.classList.remove('hidden');
+            imageModal.classList.add('flex');
+            setTimeout(() => { imageModal.classList.remove('opacity-0'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            imageModal.classList.add('opacity-0');
+            setTimeout(() => {
+                imageModal.classList.add('hidden');
+                imageModal.classList.remove('flex');
+                modalImgSrc.src = "";
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Telemetría Header
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        // Matrix
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

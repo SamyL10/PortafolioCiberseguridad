@@ -172,7 +172,7 @@
 
             <div class="grid grid-cols-1 gap-6">
 
-                <!-- TARJETA: ACTIVIDAD 07 (Iniciando el Parcial 2) -->
+                <!-- TARJETA: ACTIVIDAD 07 -->
                 <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group hover:border-ctosBlue/50 transition-colors shadow-[0_0_15px_rgba(0,168,255,0.05)]">
                     <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest group-hover:bg-ctosBlue group-hover:text-black transition-colors">
                         LOG_07
@@ -186,7 +186,6 @@
                     <div class="space-y-4 font-mono text-sm md:text-base text-gray-300">
                         <p>Actividad en la cual se realiza el laboratorio File Path Traversal - Simple case. En este entorno de prueba, se intercepta la petición encargada de cargar la imagen de un producto y se modifica el parámetro 'filename'. Utilizando secuencias de salto de directorio estándar (../../../etc/passwd), se logra evadir la ruta base para acceder y leer archivos confidenciales del sistema, evidenciando una falta total de saneamiento de datos por parte del servidor.</p>
                         <div class="pt-4">
-                            <!-- NOTA: Cambia "Actividad7.html" por el nombre de archivo correspondiente -->
                             <a href="Actividad07.html" class="inline-block border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
                                 > [ EJECUTAR_REPORTE ]
                             </a>
@@ -194,7 +193,27 @@
                     </div>
                 </section>
 
-                <!-- AQUÍ PODRÁS IR AGREGANDO LAS SIGUIENTES TARJETAS (LOG_08, LOG_09, etc.) -->
+                <!-- TARJETA: ACTIVIDAD 08 (NUEVA) -->
+                <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group hover:border-ctosBlue/50 transition-colors shadow-[0_0_15px_rgba(0,168,255,0.05)]">
+                    <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest group-hover:bg-ctosBlue group-hover:text-black transition-colors">
+                        LOG_08
+                    </div>
+
+                    <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                        <svg class="w-6 h-6 text-ctosBlue flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                        <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest group-hover:text-ctosBlue transition-colors">Actividad 08 Lab: Traversal sequences blocked with absolute path bypass</h3>
+                    </div>
+                    
+                    <div class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                        <p>Actividad en la cual se realiza el laboratorio File Path Traversal - Absolute path bypass. En este escenario, el mecanismo de defensa bloquea las secuencias relativas clásicas (../). La vulnerabilidad se explota proporcionando de manera directa la ruta absoluta del archivo objetivo (/etc/passwd), lo que demuestra que la aplicación valida el salto relativo pero procesa rutas absolutas sin restricciones, evidenciando un filtrado ineficiente.</p>
+                        <div class="pt-4">
+                            <!-- NOTA: Asegúrate de que el nombre coincida con tu archivo HTML del Lab 8 -->
+                            <a href="Actividad08.html" class="inline-block border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                                > [ EJECUTAR_REPORTE ]
+                            </a>
+                        </div>
+                    </div>
+                </section>
 
             </div>
         </div>

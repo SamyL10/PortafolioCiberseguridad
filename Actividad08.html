@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 08: Absolute Path Bypass // ctOS Database</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 9999; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .zoomable-img { cursor: zoom-in; transition: transform 0.3s ease, border-color 0.3s ease; }
+        .zoomable-img:hover { border-color: #00a8ff; transform: scale(1.02); }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">SYS_ACTIVE</div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">SAMUEL LÓPEZ GÓMEZ</h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="Parcial2.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_2</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <!-- Botón de regreso -->
+        <div class="mb-6">
+            <a href="Parcial2.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO_P2 ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <!-- ETIQUETA SUPERIOR -->
+            <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                VULN_DOSSIER
+            </div>
+
+            <!-- TÍTULO PRINCIPAL Y METADATA -->
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-ctosBlue/30 pb-6 mb-2">
+                <div class="flex items-start gap-4">
+                    <svg class="w-10 h-10 text-ctosBlue animate-pulse flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest leading-tight">Actividad 08 Lab: File path traversal, traversal sequences blocked with absolute path bypass</h2>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-red-900/40 text-red-400 border border-red-500/50">CWE-22: Improper Limitation</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50">OWASP A01:2021</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BARRA DE DESCARGA -->
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-5 relative group flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest">
+                    ATTACHMENT_FOUND
+                </div>
+                <div class="flex items-center gap-4 w-full md:w-auto mt-2 md:mt-0">
+                    <div class="text-ctosBlue flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-base">Reporte Original</h4>
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Reporte de Actividad Detallado incluyendo referencias // Extensión: .pdf</p>
+                    </div>
+                </div>
+                <!-- IMPORTANTE: Cambia "Reporte_Act08.pdf" por tu archivo real -->
+                <a href="Actividad08.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full md:w-auto cursor-crosshair flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_ARCHIVO ]
+                </a>
+            </div>
+
+            <!-- INTRODUCCIÓN, TIPO Y OBJETIVOS (3 COLUMNAS) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Nivel -->
+                <section class="border border-white/10 bg-black/60 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-white/5 border-l border-b border-white/20 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-gray-400">LEVEL</div>
+                    <h3 class="text-sm font-bold text-ctosBlue uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Nivel de Laboratorio
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow font-bold text-ctosBlue">
+                        PRACTITIONER
+                    </p>
+                </section>
+                <!-- Clasificación -->
+                <section class="border border-yellow-500/30 bg-yellow-900/10 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-yellow-500/20 border-l border-b border-yellow-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-yellow-400">EXPLOIT_TYPE</div>
+                    <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Clasificación
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow">
+                        <strong>Path Traversal / Directory Traversal (CWE-22)</strong>. Lectura arbitraria de archivos del servidor.
+                    </p>
+                </section>
+                <!-- Objetivo -->
+                <section class="border border-green-500/30 bg-green-900/10 p-6 relative flex flex-col shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+                    <div class="absolute top-0 right-0 bg-green-500/20 border-l border-b border-green-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-green-400">MISSION_GOAL</div>
+                    <h3 class="text-sm font-bold text-green-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Objetivo
+                    </h3>
+                    <p class="text-sm leading-relaxed text-green-100/80 font-mono flex-grow">
+                        Explotar la funcionalidad de visualización de imágenes de productos para recuperar el contenido del archivo <code class="text-green-400 font-bold">/etc/passwd</code> del servidor.
+                    </p>
+                </section>
+            </div>
+
+            <!-- MARCO TEÓRICO -->
+            <section class="border border-white/5 bg-black/40 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                    THEORY_CORE
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-6 pr-24">
+                    Marco teórico y explicación técnica
+                </h3>
+
+                <div class="space-y-4">
+                    <p class="text-sm font-mono text-gray-300">
+                        La aplicación vulnerable carga las imágenes de los productos de su catálogo a través de un endpoint del tipo: <code class="text-ctosBlue font-bold bg-white/5 px-1">GET /image?filename=7.jpg</code>.
+                    </p>
+                    <p class="text-sm font-mono text-gray-300">
+                        El servidor concatena el valor recibido en el parámetro filename con un directorio base predeterminado en el sistema de archivos (por ejemplo, <code class="text-gray-400">/var/www/images/</code>) para localizar y devolver el archivo correspondiente. A diferencia del laboratorio introductorio, la aplicación bloquea de forma explícita las secuencias de traversal relativas, es decir, cualquier cadena que contenga <code class="text-red-400 font-bold">../</code>, eliminándolas o rechazando la petición cuando las detecta.
+                    </p>
+                    <p class="text-sm font-mono text-gray-300">
+                        Sin embargo, dicha sanitización presenta una falla de diseño importante: el filtro únicamente contempla rutas relativas construidas con <code class="text-red-400">../</code>, pero no valida si la cadena suministrada corresponde a una ruta absoluta. Como el sistema operativo del servidor (Linux) interpreta cualquier ruta que comience con <code class="text-green-400 font-bold">/</code> como una ruta absoluta desde la raíz del sistema de archivos, es posible omitir por completo el directorio base de imágenes de la aplicación simplemente indicando la ruta completa del archivo objetivo.
+                    </p>
+                    <p class="text-sm font-mono text-gray-300">
+                        Este comportamiento corresponde a un caso clásico de bypass de sanitización por cobertura incompleta del filtro (CWE-22 — Improper Limitation of a Pathname to a Restricted Directory). El desarrollador anticipó un vector de ataque pero no consideró un vector equivalente, dejando expuesta la misma clase de vulnerabilidad.
+                    </p>
+                    <p class="text-sm font-mono text-gray-300">
+                        Desde la perspectiva de los principios de seguridad OWASP, este caso ilustra una violación del principio de "defensa en profundidad": una única capa de validación fue tratada como suficiente. También ejemplifica una falla del principio CIA en su componente de Confidencialidad, ya que un usuario no autorizado logra leer información del servidor (credenciales y cuentas del sistema operativo) a la que no debería tener acceso. Un atacante real podría emplear esta misma técnica para leer archivos de configuración de la aplicación, código fuente o claves privadas.
+                    </p>
+                </div>
+            </section>
+
+            <!-- SIMULADOR DINÁMICO (JS) -->
+            <section class="border border-ctosBlue/50 bg-[#050505] p-6 relative shadow-[0_0_15px_rgba(0,168,255,0.05)] mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                    SYS_SIMULATOR
+                </div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pr-24 border-b border-ctosBlue/30 pb-3">
+                    <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        Virtual Backend Sandbox (Absolute Path Bypass)
+                    </h3>
+                    <div class="flex gap-2 font-mono text-[10px]">
+                        <button onclick="setSimPayload('7.jpg')" class="px-2 py-1 bg-black border border-white/20 hover:border-ctosBlue text-gray-300 hover:text-white transition-colors">7.jpg</button>
+                        <button onclick="setSimPayload('../../../etc/passwd')" class="px-2 py-1 bg-red-900/20 border border-red-500/30 hover:bg-red-900/60 text-red-400 transition-colors">../../../etc/passwd</button>
+                        <button onclick="setSimPayload('/etc/passwd')" class="px-2 py-1 bg-green-900/20 border border-green-500/30 hover:bg-green-900/60 text-green-400 transition-colors">/etc/passwd</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-mono text-ctosBlue font-bold mb-1">GET /image?filename=</label>
+                        <input id="simInput" type="text" value="/etc/passwd" oninput="runPathSimulation()" 
+                            class="w-full bg-[#0a0a0c] border border-white/20 focus:border-ctosBlue rounded-none px-4 py-2 font-mono text-sm text-white placeholder-gray-600 outline-none transition-colors">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-black border border-white/10 font-mono text-xs space-y-2">
+                            <span class="text-gray-500 block border-b border-white/10 pb-1 mb-2 uppercase tracking-widest">> EVALUACIÓN DEL SERVIDOR</span>
+                            <div class="text-gray-400">Ruta Base: <span class="text-ctosBlue">/var/www/images/</span></div>
+                            <div class="text-gray-400">Input Usuario: <span id="simConcat" class="text-yellow-400 break-all"></span></div>
+                            <div class="text-gray-400 mt-2 pt-2 border-t border-white/5">Filtro / Ejecución: <span id="simResolved" class="font-bold break-all"></span></div>
+                            <div class="pt-2"><span id="simHttpStatus" class="px-2 py-0.5 border text-[10px] font-bold"></span></div>
+                        </div>
+                        
+                        <div class="p-4 bg-[#0a0a0c] border border-white/10 font-mono text-xs flex flex-col">
+                            <div class="flex justify-between items-center text-gray-500 border-b border-white/10 pb-1 mb-2 uppercase tracking-widest text-[10px]">
+                                <span>> RESPONSE BODY</span>
+                                <span id="simContentType"></span>
+                            </div>
+                            <div id="simOutputBox" class="flex-1 max-h-32 overflow-y-auto text-gray-300 whitespace-pre-wrap select-all leading-relaxed"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LÍNEA DE TIEMPO: LOS 15 PASOS -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    OPERATION_LOG
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-8 pr-24">
+                    Procedimiento paso a paso y evidencias
+                </h3>
+                
+                <div class="relative pl-6 sm:pl-8 border-l-2 border-ctosBlue/20 space-y-12 font-mono text-sm text-gray-300">
+                    
+                    <!-- PASO 1 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">1</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 1</h4>
+                        <p class="mb-3">Se abrió Burp Suite Community Edition y, en la ventana de bienvenida, se seleccionó la opción "Temporary project in memory". Esta modalidad crea un proyecto que existe únicamente en la memoria RAM durante la sesión de trabajo, sin generar archivos en disco; es la opción recomendada para ejercicios puntuales de práctica como este laboratorio, donde no es necesario conservar el historial de peticiones entre sesiones.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/1.png" alt="Paso 1" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 2 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">2</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 2</h4>
+                        <p class="mb-3">En la siguiente ventana se eligió la configuración "Use Burp defaults" en lugar de cargar un archivo de configuración personalizado, y se presionó el botón "Start Burp". Esto inicializa la herramienta con sus valores predeterminados de fábrica: proxy de intercepción escuchando en 127.0.0.1:8080, certificado CA propio para inspeccionar tráfico HTTPS y todos los módulos (Proxy, Repeater, Intruder, etc.) disponibles.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/2.png" alt="Paso 2" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 3 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">3</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 3</h4>
+                        <p class="mb-3">Burp Suite abrió su interfaz principal directamente en la pestaña Proxy › Intercept, con el interceptor apagado ("Intercept is off"). En este estado, el proxy permite pasar el tráfico sin detenerlo, lo cual sirvió como punto de partida antes de comenzar a capturar peticiones.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/3.png" alt="Paso 3" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 4 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">4</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 4</h4>
+                        <p class="mb-3">Desde el navegador habitual se accedió a la página de descripción del laboratorio en PortSwigger Web Security Academy, donde se puede leer el objetivo (recuperar /etc/passwd) y el estado inicial "Not solved". Se dio clic en el botón "ACCESS THE LAB", lo que generó una instancia única y temporal del laboratorio con una URL aleatoria asociada a la sesión.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/4.png" alt="Paso 4" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 5 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">5</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 5</h4>
+                        <p class="mb-3">Se regresó a Burp Suite y, en la pestaña Proxy, se activó el botón "Intercept on". A partir de este momento, cualquier petición HTTP/HTTPS que pase por el proxy quedará detenida hasta que se decida reenviarla (Forward), descartarla (Drop) o editarla manualmente. Después se utilizó el botón "Open browser", ubicado en la esquina superior derecha de la pestaña, el cual abre una instancia de Chromium ya preconfigurada por Burp con el proxy y el certificado CA correctos, evitando así tener que configurar manualmente el proxy del sistema operativo.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/5.png" alt="Paso 5" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 6 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">6</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 6</h4>
+                        <p class="mb-3">En el navegador embebido de Burp se pegó la URL del laboratorio obtenida en el paso 4. Al intentar cargar la página, Burp interceptó de inmediato la primera petición generada: una solicitud GET / dirigida al dominio del laboratorio, correspondiente al documento HTML principal de la aplicación. Se inspeccionaron sus cabeceras (User-Agent, cookies de sesión, etc.) y se presionó "Forward" para permitir que continuara su curso hacia el servidor.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/6.png" alt="Paso 6" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 7 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">7</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 7</h4>
+                        <p class="mb-3">Al seguir reenviando peticiones, Burp fue deteniendo, una a una, las múltiples solicitudes GET /image?filename=N.jpg que el navegador dispara automáticamente para cargar las miniaturas de cada producto del catálogo de la tienda "We Like To Shop" (por ejemplo, filename=6.jpg, filename=7.jpg, filename=18.jpg, filename=23.jpg, etc.). Esta cola de peticiones resultó especialmente reveladora, pues expuso con claridad el patrón que utiliza la aplicación para referenciar cada imagen: un simple nombre de archivo pasado como parámetro filename, sin ningún tipo de token o identificador indirecto que dificulte su manipulación.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/7.png" alt="Paso 7" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 8 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">8</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 8</h4>
+                        <p class="mb-3">Una vez reenviadas todas las peticiones pendientes, la página de la tienda terminó de renderizarse por completo, mostrando el catálogo de productos y el estado "Not solved" en la esquina superior derecha, confirmando que el laboratorio aún no había sido resuelto en ese punto.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/8.png" alt="Paso 8" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 9 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">9</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 9</h4>
+                        <p class="mb-3">Del catálogo se seleccionó el producto "Conversation Controlling Lemon", con el único fin de generar tráfico hacia su página de detalle. Burp interceptó, en primer lugar, un mensaje WebSocket de tipo PING (propio del mecanismo interno de la academia para verificar el estado del laboratorio) y, a continuación, la petición GET /product?productId=2, correspondiente a la navegación hacia el detalle de ese producto en específico.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/9.png" alt="Paso 9" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 10 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">10</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 10</h4>
+                        <p class="mb-3">Al reenviar la petición anterior y terminar de cargar la página de detalle del producto, Burp interceptó la petición que realmente interesa para la explotación: GET /image?filename=7.jpg, correspondiente a la imagen grande de ese producto en particular. Esta es la petición que se aprovechará para inyectar el payload, ya que es la que determina, a partir de un valor de texto controlado por el cliente, qué archivo del servidor se va a leer y devolver.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/10.png" alt="Paso 10" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 11 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">11</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 11</h4>
+                        <p class="mb-3">Sobre esta petición interceptada se dio clic derecho para desplegar el menú contextual de Burp y se seleccionó la opción "Send to Repeater" (atajo Ctrl+R). Esta acción envía una copia exacta de la petición a la pestaña Repeater, herramienta que permite reenviar y modificar manualmente una misma petición HTTP tantas veces como sea necesario, observando en tiempo real la respuesta del servidor a cada variación, sin necesidad de volver a interactuar con el navegador ni de reinterceptar el tráfico.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/11.png" alt="Paso 11" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 12 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">12</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 12</h4>
+                        <p class="mb-3">Ya dentro de Repeater, y antes de modificar nada, se envió la petición tal cual llegó (filename=7.jpg) presionando el botón "Send". El objetivo de este envío de control fue confirmar el comportamiento legítimo del endpoint: el servidor respondió con un código 200 OK, cabecera Content-Type: image/jpeg y un cuerpo binario correspondiente a los bytes de la imagen del producto, lo que sirvió como línea base para comparar contra la respuesta obtenida tras la explotación.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/12.png" alt="Paso 12" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 13 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">13</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 13</h4>
+                        <p class="mb-3">En el panel de Request de Repeater se editó directamente el valor del parámetro filename, reemplazando 7.jpg por la ruta absoluta /etc/passwd, quedando la primera línea de la petición como GET /image?filename=/etc/passwd HTTP/2. El resto de las cabeceras (Host, Cookie de sesión, User-Agent, etc.) se dejaron intactas, ya que no forman parte del mecanismo de validación de la ruta y no era necesario modificarlas para lograr la explotación.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/13.png" alt="Paso 13" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 14 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-green-500 rounded-full flex items-center justify-center font-bold text-green-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">14</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 14</h4>
+                        <p class="mb-3">Al presionar "Send" con la petición ya modificada, el servidor respondió nuevamente con un código 200 OK, pero en esta ocasión el cuerpo de la respuesta ya no correspondía a una imagen, sino a texto plano con el listado completo de cuentas del sistema operativo del servidor (root, daemon, bin, sys, www-data, backup, peter, entre otras), es decir, el contenido real del archivo /etc/passwd. Este resultado confirma de manera contundente que el filtro de traversal de la aplicación fue evadido con éxito.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/14.png" alt="Paso 14" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- PASO 15 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px]">15</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Paso 15</h4>
+                        <p class="mb-3">Finalmente, se regresó a la pestaña del navegador donde estaba abierta la página del laboratorio en PortSwigger y se refrescó. El indicador de estado, ubicado junto al botón "ACCESS THE LAB", cambió de "Not solved" a "Solved" (con la marca de verificación característica), lo que constituye la confirmación oficial, por parte de la plataforma, de que la vulnerabilidad fue explotada correctamente y el objetivo del laboratorio se cumplió en su totalidad.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act08/15.png" alt="Paso 15" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ANÁLISIS DEL PAYLOAD -->
+            <section class="border border-white/5 bg-black p-6 relative shadow-inner mt-4">
+                <div class="absolute top-0 right-0 bg-red-900/40 border-l border-b border-red-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-red-500 tracking-widest">
+                    PAYLOAD_ANALYSIS
+                </div>
+                <h3 class="text-lg font-cyber font-bold text-white uppercase tracking-widest mb-4 border-b border-white/10 pb-2">
+                    Explicación del payload
+                </h3>
+                
+                <div class="font-mono text-sm space-y-4">
+                    <div class="bg-[#050505] border border-white/10 p-4 font-bold text-xl text-center tracking-[0.2em] mb-6">
+                        <span class="text-green-400">/etc/passwd</span>
+                    </div>
+
+                    <div class="space-y-3 text-gray-300">
+                        <p>Este valor se utilizó como reemplazo del nombre de archivo esperado por la aplicación (por ejemplo, 7.jpg) en el parámetro filename de la petición GET /image.</p>
+                        
+                        <p>Al tratarse de una ruta absoluta de Linux (comienza con "/"), el sistema de archivos la resuelve desde la raíz del sistema, ignorando por completo el directorio base de imágenes configurado por la aplicación (/var/www/images/).</p>
+                        
+                        <p>No fue necesario emplear secuencias de retroceso "../" porque no se está "escapando" de un directorio mediante navegación relativa, sino indicando de forma directa la ubicación absoluta del archivo, mecanismo que el filtro de la aplicación no contempla ni bloquea.</p>
+                        
+                        <p>El archivo /etc/passwd se utiliza como prueba de concepto estándar en este tipo de laboratorios porque, en sistemas Unix/Linux, es legible por cualquier usuario del sistema y su contenido (listado de cuentas, shells y directorios home) es fácilmente identificable, lo que permite comprobar de forma inequívoca que se logró la lectura arbitraria de archivos del servidor.</p>
+                        
+                        <p>A diferencia del laboratorio básico de Path Traversal —donde el payload típico es ../../../etc/passwd—, aquí no se necesitan los tres niveles de "../" porque la ruta absoluta no depende de cuántos directorios haya que subir desde la carpeta base; simplemente se le indica al sistema operativo la ubicación final y definitiva del archivo, saltándose por completo la lógica de concatenación relativa que la aplicación esperaba controlar.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROTOCOLO DE MITIGACIÓN -->
+            <section class="border border-green-500/30 bg-green-900/10 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-green-500/20 border-l border-b border-green-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-green-400 tracking-widest">
+                    SECURITY_PATCH
+                </div>
+                <h3 class="text-lg font-cyber font-bold text-green-400 uppercase tracking-widest mb-6 border-b border-green-500/20 pb-2">
+                    Mitigación recomendada
+                </h3>
+                
+                <ul class="space-y-4 font-mono text-sm text-gray-300 list-disc pl-5 marker:text-green-400">
+                    <li>Evitar el uso de datos suministrados por el usuario para construir rutas de archivo; en su lugar, emplear identificadores indirectos (por ejemplo, un ID numérico o un mapa interno de nombres permitidos).</li>
+                    <li>Validar la entrada contra una lista blanca (whitelist) de nombres o extensiones de archivo permitidos, en lugar de intentar filtrar patrones maliciosos (blacklist), enfoque que es propenso a bypass como el demostrado en este laboratorio.</li>
+                    <li>Canonicalizar la ruta resultante (por ejemplo, con funciones equivalentes a realpath()) y verificar que la ruta final permanezca dentro del directorio base autorizado antes de acceder al archivo.</li>
+                    <li>Rechazar explícitamente cualquier entrada que constituya una ruta absoluta (que inicie con "/" en Linux o con una letra de unidad en Windows), además de continuar bloqueando las secuencias de traversal relativas.</li>
+                    <li>Ejecutar el proceso del servidor bajo el principio de mínimo privilegio, de modo que no tenga permisos de lectura sobre archivos sensibles del sistema operativo.</li>
+                    <li>Utilizar bibliotecas o funciones de framework diseñadas para el acceso seguro a archivos, evitando construir rutas manualmente mediante concatenación de cadenas.</li>
+                </ul>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- MODAL PARA AMPLIAR IMÁGENES -->
+    <div id="image-modal" class="fixed inset-0 z-[40000] bg-black/95 backdrop-blur-md hidden flex-col justify-center items-center p-4 transition-opacity duration-300 opacity-0" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors outline-none font-cyber font-bold text-2xl hover:scale-110">
+            [X]
+        </button>
+        <img id="modal-img-src" src="" alt="Captura Ampliada" class="max-w-full max-h-full border-2 border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.4)]" onclick="event.stopPropagation()">
+        <p class="text-ctosBlue font-mono text-xs mt-4 tracking-widest">> Clickea en cualquier parte para cerrar <</p>
+    </div>
+
+    <script>
+        // Lógica del Simulador de Nodos (Adaptado para Bypass Absoluto)
+        function setSimPayload(val) {
+            const input = document.getElementById('simInput');
+            input.value = val;
+            runPathSimulation();
+        }
+
+        function runPathSimulation() {
+            const rawInput = document.getElementById('simInput').value.trim();
+            const concatEl = document.getElementById('simConcat');
+            const resolvedEl = document.getElementById('simResolved');
+            const statusEl = document.getElementById('simHttpStatus');
+            const typeEl = document.getElementById('simContentType');
+            const outBox = document.getElementById('simOutputBox');
+
+            const basePath = "/var/www/images/";
+            concatEl.innerText = rawInput;
+
+            // Filtro Defensivo (Bloquea ../)
+            if (rawInput.includes("../") || rawInput.includes("..\\")) {
+                resolvedEl.innerText = "ACCESO DENEGADO (Secuencia relativa bloqueada por filtro)";
+                resolvedEl.className = "text-red-500 font-bold break-all";
+                statusEl.innerText = "400 Bad Request";
+                statusEl.className = "px-2 py-0.5 border border-red-500/50 text-[10px] font-bold text-red-500 bg-red-900/20";
+                typeEl.innerText = "Content-Type: application/json";
+                outBox.className = "flex-1 max-h-32 overflow-y-auto text-red-400 whitespace-pre-wrap select-all leading-relaxed";
+                outBox.innerText = '{\n  "error": "Security Exception",\n  "message": "Traversal sequences detected and blocked."\n}';
+                return;
+            }
+
+            // Explotación con ruta absoluta directa
+            if (rawInput === "/etc/passwd") {
+                resolvedEl.innerText = "/etc/passwd (Lectura directa permitida)";
+                resolvedEl.className = "text-green-400 font-bold break-all";
+                statusEl.innerText = "200 OK";
+                statusEl.className = "px-2 py-0.5 border border-green-500/50 text-[10px] font-bold text-green-400 bg-green-900/20";
+                typeEl.innerText = "Content-Type: image/jpeg (Payload in body)";
+                outBox.className = "flex-1 max-h-32 overflow-y-auto text-green-300 whitespace-pre-wrap select-all leading-relaxed";
+                outBox.innerText = `root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nsys:x:3:3:sys:/dev:/usr/sbin/nologin\nsync:x:4:65534:sync:/bin:/bin/sync\ngames:x:5:60:games:/usr/games:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\npeter:x:12001:12001::/home/peter:/bin/bash\ncarlos:x:12002:12002::/home/carlos:/bin/bash`;
+                return;
+            }
+
+            // Carga normal de imagen
+            if (rawInput === "7.jpg" || rawInput.endsWith(".jpg")) {
+                resolvedEl.innerText = basePath + rawInput;
+                resolvedEl.className = "text-ctosBlue font-bold break-all";
+                statusEl.innerText = "200 OK";
+                statusEl.className = "px-2 py-0.5 border border-white/20 text-[10px] font-bold text-white bg-white/10";
+                typeEl.innerText = "Content-Type: image/jpeg";
+                outBox.className = "flex-1 max-h-32 overflow-y-auto text-gray-500 whitespace-pre-wrap select-all leading-relaxed";
+                outBox.innerText = `[Contenido binario JPEG de la imagen '${rawInput}']\n\n\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01...`;
+                return;
+            }
+
+            // Fallback general
+            resolvedEl.innerText = basePath + rawInput;
+            resolvedEl.className = "text-yellow-400 font-bold break-all";
+            statusEl.innerText = "404 Not Found";
+            statusEl.className = "px-2 py-0.5 border border-yellow-500/50 text-[10px] font-bold text-yellow-400 bg-yellow-900/20";
+            typeEl.innerText = "Content-Type: text/html";
+            outBox.className = "flex-1 max-h-32 overflow-y-auto text-yellow-300 whitespace-pre-wrap select-all leading-relaxed";
+            outBox.innerText = `<!DOCTYPE html>\n<html>\n<head><title>404 Not Found</title></head>\n<body>\n<h1>Not Found</h1>\n<p>El archivo no existe en el servidor.</p>\n</body>\n</html>`;
+        }
+
+        window.onload = function() {
+            runPathSimulation();
+        };
+
+        // Modal de Imágenes
+        const imageModal = document.getElementById('image-modal');
+        const modalImgSrc = document.getElementById('modal-img-src');
+
+        function openImageModal(src) {
+            modalImgSrc.src = src;
+            imageModal.classList.remove('hidden');
+            imageModal.classList.add('flex');
+            setTimeout(() => { imageModal.classList.remove('opacity-0'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            imageModal.classList.add('opacity-0');
+            setTimeout(() => {
+                imageModal.classList.add('hidden');
+                imageModal.classList.remove('flex');
+                modalImgSrc.src = "";
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Telemetría Header
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        // Matrix
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

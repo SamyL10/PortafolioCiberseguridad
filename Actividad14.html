@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 14: Ciberseguridad en una mirada // ctOS Database</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 9999; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        /* Scrollbar general oculta */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Scrollbar personalizada para el visor de la infografía */
+        .visor-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .visor-scroll::-webkit-scrollbar-track {
+            background: rgba(10, 10, 12, 0.8);
+            border-left: 1px solid rgba(0, 168, 255, 0.2);
+        }
+        .visor-scroll::-webkit-scrollbar-thumb {
+            background: #00a8ff;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 168, 255, 0.8);
+        }
+        .visor-scroll::-webkit-scrollbar-thumb:hover {
+            background: #ffffff;
+        }
+
+        .zoomable-img { cursor: zoom-in; transition: transform 0.3s ease, filter 0.3s ease; }
+        .zoomable-img:hover { filter: brightness(1.1); }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">SYS_ACTIVE</div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">SAMUEL LÓPEZ GÓMEZ</h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="Parcial2.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_2</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <!-- Botón de regreso -->
+        <div class="mb-6">
+            <a href="Parcial2.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO_P2 ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <!-- ETIQUETA SUPERIOR -->
+            <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                INFO_DOSSIER
+            </div>
+
+            <!-- TÍTULO PRINCIPAL -->
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-ctosBlue/30 pb-6 mb-2">
+                <div class="flex items-start gap-4">
+                    <svg class="w-10 h-10 text-ctosBlue animate-pulse flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest leading-tight">Actividad 14: Ciberseguridad en una mirada</h2>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-cyan-900/40 text-cyan-400 border border-cyan-500/50">INFOGRAFÍA PROFESIONAL</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50">CISCO NETWORKING ACADEMY</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTRODUCCIÓN Y OBJETIVOS (3 COLUMNAS) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Resumen -->
+                <section class="border border-white/10 bg-black/60 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-white/5 border-l border-b border-white/20 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-gray-400">CONTEXT</div>
+                    <h3 class="text-sm font-bold text-ctosBlue uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Descripción de la Actividad
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow">
+                        El estudiante deberá elaborar una infografía profesional en formato vertical sobre un tema de su elección abordado en el curso Introducción a la Ciberseguridad de Cisco. Se seleccionó el "Módulo 2: Ataques, conceptos y técnicas".
+                    </p>
+                </section>
+                <!-- Objetivo General -->
+                <section class="border border-yellow-500/30 bg-yellow-900/10 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-yellow-500/20 border-l border-b border-yellow-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-yellow-400">MAIN_OBJECTIVE</div>
+                    <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Objetivo General
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow">
+                        Diseñar una infografía profesional que explique de manera visual, sintética y estratégica uno de los temas abordados en el curso. El diseño debe demostrar comprensión técnica, capacidad de síntesis y comunicación efectiva orientada a la concientización organizacional.
+                    </p>
+                </section>
+                <!-- Objetivos Específicos -->
+                <section class="border border-green-500/30 bg-green-900/10 p-6 relative flex flex-col shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+                    <div class="absolute top-0 right-0 bg-green-500/20 border-l border-b border-green-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-green-400">REQUIREMENTS</div>
+                    <h3 class="text-sm font-bold text-green-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Criterios de Evaluación
+                    </h3>
+                    <ul class="text-sm leading-relaxed text-green-100/80 font-mono flex-grow list-disc pl-4 space-y-2">
+                        <li>Identificar y explicar correctamente los conceptos fundamentales asegurando precisión técnica.</li>
+                        <li>Sintetizar información compleja en elementos visuales claros (diagramas, esquemas).</li>
+                        <li>Presentar la información con enfoque estratégico: qué es, por qué es relevante, qué riesgos implica y cómo se mitiga.</li>
+                    </ul>
+                </section>
+            </div>
+
+            <!-- VISOR DE INFOGRAFÍA CON SCROLL VERTICAL -->
+            <section class="border border-ctosBlue/50 bg-[#050505] p-2 md:p-6 relative shadow-[0_0_20px_rgba(0,168,255,0.1)] mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest z-20 pointer-events-none">
+                    INFOGRAPHIC_VIEWER
+                </div>
+                
+                <div class="flex items-center justify-between border-b border-ctosBlue/30 pb-3 mb-4 px-2">
+                    <h3 class="text-lg font-cyber font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        <svg class="w-5 h-5 text-ctosBlue" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Módulo 2: Ataques, conceptos y técnicas
+                    </h3>
+                    <p class="text-xs text-gray-500 font-mono hidden md:block">Desliza para explorar el documento completo</p>
+                </div>
+
+                <!-- CONTENEDOR DEL SCROLL (SLIDER VERTICAL) -->
+                <div class="w-full h-[600px] overflow-y-auto visor-scroll bg-black border border-white/10 relative rounded-sm shadow-inner group">
+                    
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 group-hover:opacity-0 transition-opacity z-10">
+                        <div class="flex flex-col items-center">
+                            <svg class="w-12 h-12 text-white animate-bounce mb-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                            <span class="font-cyber text-xs tracking-widest">SCROLL DOWN</span>
+                        </div>
+                    </div>
+
+                    <!-- IMAGEN DE LA INFOGRAFÍA -->
+                    <img src="Actividad 14-Ciberseguridad en una mirada.jpg" alt="Infografía Ciberseguridad" class="w-full h-auto object-cover zoomable-img relative z-0" onclick="openImageModal(this.src)">
+                    
+                </div>
+                
+                <div class="mt-4 flex justify-between items-center px-2">
+                    <p class="text-[10px] text-gray-500 font-mono">> Clic en la imagen para ampliar en pantalla completa.</p>
+                    <a href="Actividad 14-Ciberseguridad en una mirada.jpg" download class="text-[10px] md:text-xs text-ctosBlue hover:text-white font-cyber tracking-widest border border-ctosBlue hover:bg-ctosBlue/20 px-3 py-1 transition-colors">
+                        [ DESCARGAR_IMAGEN ]
+                    </a>
+                </div>
+
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- MODAL PARA AMPLIAR IMÁGENES -->
+    <div id="image-modal" class="fixed inset-0 z-[40000] bg-black/95 backdrop-blur-md hidden flex-col justify-center items-center p-4 transition-opacity duration-300 opacity-0" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors outline-none font-cyber font-bold text-2xl hover:scale-110">
+            [X]
+        </button>
+        <!-- Contenedor scrolleable dentro del modal para imágenes muy altas -->
+        <div class="w-full max-w-5xl h-[90vh] overflow-y-auto visor-scroll flex justify-center border-2 border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.4)]" onclick="event.stopPropagation()">
+            <img id="modal-img-src" src="" alt="Captura Ampliada" class="w-full h-auto object-contain">
+        </div>
+        <p class="text-ctosBlue font-mono text-xs mt-4 tracking-widest">> Clickea en el fondo oscuro o en la [X] para cerrar <</p>
+    </div>
+
+    <script>
+        // Modal de Imágenes adaptado para infografías verticales
+        const imageModal = document.getElementById('image-modal');
+        const modalImgSrc = document.getElementById('modal-img-src');
+
+        function openImageModal(src) {
+            modalImgSrc.src = src;
+            imageModal.classList.remove('hidden');
+            imageModal.classList.add('flex');
+            setTimeout(() => { imageModal.classList.remove('opacity-0'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            imageModal.classList.add('opacity-0');
+            setTimeout(() => {
+                imageModal.classList.add('hidden');
+                imageModal.classList.remove('flex');
+                modalImgSrc.src = "";
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Telemetría Header
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        // Matrix Background
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

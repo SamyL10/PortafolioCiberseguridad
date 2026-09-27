@@ -234,6 +234,48 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- TARJETA: ACTIVIDAD 10 -->
+                <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group hover:border-ctosBlue/50 transition-colors shadow-[0_0_15px_rgba(0,168,255,0.05)]">
+                    <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest group-hover:bg-ctosBlue group-hover:text-black transition-colors">
+                        LOG_10
+                    </div>
+
+                    <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                        <svg class="w-6 h-6 text-ctosBlue flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                        <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest group-hover:text-ctosBlue transition-colors">Actividad 10 Lab: Traversal sequences stripped with superfluous URL-decode</h3>
+                    </div>
+                    
+                    <div class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                        <p>Actividad donde se explora la evasión de mecanismos de defensa en el servidor basados en la codificación. La aplicación primero valida y bloquea las secuencias de escape estándar ('../') y, de forma superflua, aplica un URL-decode adicional sobre la entrada. Al aplicar una técnica de doble codificación URL, la carga útil elude la primera capa de filtro, resolviéndose con éxito después del decode adicional.</p>
+                        <div class="pt-4">
+                            <a href="Actividad10.html" class="inline-block border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                                > [ EJECUTAR_REPORTE ]
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TARJETA: ACTIVIDAD 11 -->
+                <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group hover:border-ctosBlue/50 transition-colors shadow-[0_0_15px_rgba(0,168,255,0.05)]">
+                    <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest group-hover:bg-ctosBlue group-hover:text-black transition-colors">
+                        LOG_11
+                    </div>
+
+                    <div class="flex items-center gap-3 border-b border-ctosBlue/30 pb-3 mb-4 pr-24">
+                        <svg class="w-6 h-6 text-ctosBlue flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                        <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest group-hover:text-ctosBlue transition-colors">Actividad 11 Lab: File path traversal, validation of start of path</h3>
+                    </div>
+                    
+                    <div class="space-y-4 font-mono text-sm md:text-base text-gray-300">
+                        <p>En este entorno, la aplicación espera recibir la ruta absoluta del archivo y valida estrictamente que inicie con un prefijo predefinido (/var/www/images/). La explotación se logra suministrando la ruta requerida como inicio, engañando a la validación, para después concatenar secuencias de traversal que permiten retroceder a la raíz y recuperar el archivo /etc/passwd.</p>
+                        <div class="pt-4">
+                            <a href="Actividad11.html" class="inline-block border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                                > [ EJECUTAR_REPORTE ]
+                            </a>
+                        </div>
+                    </div>
+                </section>
                 
                 <!-- TARJETA: ACTIVIDAD 14 -->
                 <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative group hover:border-ctosBlue/50 transition-colors shadow-[0_0_15px_rgba(0,168,255,0.05)]">

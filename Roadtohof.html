@@ -292,36 +292,36 @@
                 id: "LAB_02",
                 title: "Actividad 08 Lab: Traversal sequences blocked with absolute path bypass",
                 desc: "> ANALYZING NODE...\n> FIREWALL BYPASSED.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Absolute path bypass. En este escenario, el mecanismo de defensa bloquea las secuencias relativas clásicas (../). La vulnerabilidad se explota proporcionando de manera directa la ruta absoluta del archivo objetivo (filename=/etc/passwd), lo que demuestra que la aplicación valida el salto relativo pero procesa rutas absolutas sin restricciones.",
-                pdf: "Reporte_Lab2.pdf",
-                link: "javascript:void(0);"
+                pdf: "Actividad08.pdf",
+                link: "Actividad08.html"
             },
             {
                 id: "LAB_03",
                 title: "Actividad 09 Lab: Traversal sequences stripped non-recursively",
                 desc: "> ANALYZING NODE...\n> FILTER COLLAPSED.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Sequences stripped non-recursively. Aquí, el sistema filtra y elimina la cadena '../', pero lo hace de forma no recursiva. La explotación requiere anidar la secuencia maliciosa dentro de sí misma (....//) para que, al aplicarse el filtro de limpieza una sola vez, la estructura resultante forme una secuencia válida (../) que permite el acceso.",
-                pdf: "Reporte_Lab3.pdf",
-                link: "javascript:void(0);"
+                pdf: "Actividad09.pdf",
+                link: "Actividad09.html"
             },
             {
                 id: "LAB_04",
                 title: "Actividad 10 Lab: Traversal sequences stripped with superfluous URL-decode",
                 desc: "> ANALYZING NODE...\n> ENCODING INJECTION SUCCESSFUL.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Superfluous URL-decode. El WAF bloquea los caracteres de salto de directorio convencionales. Para evadir esta protección, se implementa una técnica de ofuscación mediante doble codificación URL (%252e%252e%252f). El filtro permite pasar la cadena ofuscada y el servidor backend realiza una doble decodificación que desencadena la ejecución del salto.",
-                pdf: "Reporte_Lab4.pdf",
-                link: "javascript:void(0);"
+                pdf: "Actividad10.pdf",
+                link: "Actividad10.html"
             },
             {
                 id: "LAB_05",
                 title: "Actividad 11 Lab: Validation of start of path",
                 desc: "> ANALYZING NODE...\n> PATH OVERRIDE.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Validation of start of path. El sistema valida estrictamente que la ruta proporcionada inicie con un directorio base obligatorio (ej. /var/www/images/). El ataque se concreta cumpliendo esta regla inicial y posteriormente encadenando secuencias de salto para retroceder hasta la raíz y leer el archivo objetivo (filename=/var/www/images/../../../etc/passwd).",
-                pdf: "Reporte_Lab5.pdf",
-                link: "javascript:void(0);"
+                pdf: "Actividad11.pdf",
+                link: "Actividad11.html"
             },
             {
                 id: "LAB_06",
                 title: "Actividad 12 Lab: Validation of file extension with null byte bypass",
                 desc: "> ANALYZING NODE...\n> MEMORY TERMINATION VULN.\n\nActividad en la cual se realiza el laboratorio File Path Traversal - Null byte bypass. La aplicación exige que la ruta termine con una extensión de imagen válida (.png). Esta validación se evade inyectando un byte nulo (%00) justo antes de la extensión exigida. Esto provoca que la API subyacente termine de leer la cadena prematuramente (../../../etc/passwd%00.png) y devuelva el archivo confidencial.",
-                pdf: "Reporte_Lab6.pdf",
-                link: "javascript:void(0);"
+                pdf: "Actividad12.pdf",
+                link: "Actividad12.html"
             }
         ];
 

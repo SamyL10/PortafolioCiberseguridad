@@ -346,7 +346,7 @@
                         <h4 class="font-bold text-white uppercase text-base mb-2">Análisis de Metadatos Fotográficos</h4>
                         <p class="mb-3">Se repitió el análisis apuntando ahora al archivo <code class="text-amber-400">XiaomiMiA2Lite.jpg</code>. La extracción reveló metadatos críticos como el hardware utilizado, el uso del flash y las coordenadas precisas (<code class="font-bold">GPS Latitude/Longitude</code>) incrustadas al momento de tomar la fotografía.</p>
                         <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
-                            <img src="Imagenes/Laboratorios/Act15/6.png" alt="ExifTool Image Analysis" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            <img src="Imagenes/Laboratorios/Act15/2.png" alt="ExifTool Image Analysis" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
                         </div>
                     </div>
 
@@ -356,7 +356,7 @@
                         <h4 class="font-bold text-white uppercase text-base mb-2">Geolocalización a partir de Fotografía (OSINT)</h4>
                         <p class="mb-3">El análisis de la imagen expuso las coordenadas GPS exactas. Como la longitud indicó referencia Oeste (West), el valor se ingresó con signo negativo en Google Maps: <code class="text-green-400 font-bold">51.253610, -0.539426</code>. Las coordenadas dirigieron a una zona residencial en Guildford, Surrey, Reino Unido.</p>
                         <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
-                            <img src="Imagenes/Laboratorios/Act15/2.png" alt="Google Maps Geolocation" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            <img src="Imagenes/Laboratorios/Act15/3.png" alt="Google Maps Geolocation" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
                         </div>
                     </div>
 
@@ -366,7 +366,7 @@
                         <h4 class="font-bold text-white uppercase text-base mb-2">Proceso de Sanitización de Datos</h4>
                         <p class="mb-3">Para eliminar los metadatos expuestos, se seleccionó la imagen en ExifTool y mediante el menú superior se accedió a <code class="text-emerald-400">Modify > Remove metadata...</code>.</p>
                         <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
-                            <img src="Imagenes/Laboratorios/Act15/3.png" alt="Modify Menu ExifTool" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            <img src="Imagenes/Laboratorios/Act15/4.png" alt="Modify Menu ExifTool" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
                         </div>
                     </div>
 
@@ -376,7 +376,7 @@
                         <h4 class="font-bold text-white uppercase text-base mb-2">Ejecución del Borrado Total</h4>
                         <p class="mb-3">En la ventana emergente, se marcó explícitamente la casilla <code class="text-emerald-400 font-bold">-remove ALL metadata</code> para asegurar la purga completa de datos Exif, Xmp, GPS e IPTC. Posteriormente, se presionó el botón Execute.</p>
                         <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
-                            <img src="Imagenes/Laboratorios/Act15/4.png" alt="Remove All Metadata Checkbox" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            <img src="Imagenes/Laboratorios/Act15/5.png" alt="Remove All Metadata Checkbox" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
                         </div>
                     </div>
 
@@ -386,7 +386,7 @@
                         <h4 class="font-bold text-white uppercase text-base mb-2">Verificación de Sanitización Exitosa</h4>
                         <p class="mb-3">Al recargar el archivo en la herramienta, se comprobó que todos los metadatos de autoría, ubicación y hardware habían desaparecido. Únicamente se conservaron los metadatos de "Sistema" (tamaño, permisos y tipo MIME), obligatorios para que el sistema operativo reconozca el archivo.</p>
                         <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
-                            <img src="Imagenes/Laboratorios/Act15/5.png" alt="Metadata Cleared" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            <img src="Imagenes/Laboratorios/Act15/6.png" alt="Metadata Cleared" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
                         </div>
                     </div>
 

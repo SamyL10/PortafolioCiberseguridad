@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 15: Análisis de Metadatos // ctOS Database</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: -1; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .zoomable-img { cursor: zoom-in; transition: transform 0.3s ease, filter 0.3s ease; }
+        .zoomable-img:hover { filter: brightness(1.1); }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">SYS_ACTIVE</div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">SAMUEL LÓPEZ GÓMEZ</h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="Parcial2.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_2</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <!-- Botón de regreso -->
+        <div class="mb-6">
+            <a href="Parcial2.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO_P2 ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <!-- ETIQUETA SUPERIOR -->
+            <div class="absolute top-0 right-0 bg-purple-900/40 border-l border-b border-purple-500/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-purple-400 tracking-widest animate-pulse">
+                FORENSIC_DOSSIER
+            </div>
+
+            <!-- TÍTULO PRINCIPAL Y METADATA -->
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-ctosBlue/30 pb-6 mb-2">
+                <div class="flex items-start gap-4">
+                    <svg class="w-10 h-10 text-purple-500 animate-pulse flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest leading-tight">Actividad 15: Análisis de Metadatos con ExifTool</h2>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-purple-900/40 text-purple-400 border border-purple-500/50">DIGITAL FORENSICS</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-emerald-900/40 text-emerald-400 border border-emerald-500/50">DATA SANITIZATION</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50">EXIFTOOL</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BARRA DE DESCARGA -->
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-5 relative group flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest">
+                    ATTACHMENT_FOUND
+                </div>
+                <div class="flex items-center gap-4 w-full md:w-auto mt-2 md:mt-0">
+                    <div class="text-ctosBlue flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-base">Reporte Original</h4>
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Documentación de la actividad en formato digital // Extensión: .pdf</p>
+                    </div>
+                </div>
+                <a href="Actividad15.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full md:w-auto cursor-crosshair flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_ARCHIVO ]
+                </a>
+            </div>
+
+            <!-- INTRODUCCIÓN Y OBJETIVOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Concepto -->
+                <section class="border border-white/10 bg-black/60 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-white/5 border-l border-b border-white/20 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-gray-400">CONTEXT</div>
+                    <h3 class="text-sm font-bold text-ctosBlue uppercase tracking-widest mb-4 flex items-center gap-2">
+                        ¿Qué son los Metadatos?
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow">
+                        Los metadatos son "datos sobre los datos". Archivos como documentos y fotografías almacenan información oculta sobre su creación, autores, software utilizado, fechas de edición e incluso coordenadas geográficas precisas (GPS). Su análisis es vital en la informática forense para rastrear orígenes y probar la autenticidad de un fichero digital.
+                    </p>
+                </section>
+                <!-- Objetivo -->
+                <section class="border border-purple-500/30 bg-purple-900/10 p-6 relative flex flex-col shadow-[0_0_15px_rgba(168,85,247,0.05)]">
+                    <div class="absolute top-0 right-0 bg-purple-500/20 border-l border-b border-purple-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-purple-400">MISSION_GOAL</div>
+                    <h3 class="text-sm font-bold text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Objetivo de la Evaluación
+                    </h3>
+                    <p class="text-sm leading-relaxed text-purple-100/80 font-mono flex-grow">
+                        Extraer e interpretar los metadatos ocultos en un documento de Word (.docx) y una fotografía (.jpg) utilizando la herramienta <code class="font-bold text-purple-400">ExifTool</code>. Posteriormente, mapear las coordenadas GPS obtenidas de la imagen y realizar un proceso de sanitización (eliminación completa) de metadatos para preservar la privacidad del archivo.
+                    </p>
+                </section>
+            </div>
+
+            <!-- SIMULADOR DINÁMICO (TERMINAL JS) -->
+            <section class="border border-ctosBlue/50 bg-[#050505] p-6 relative shadow-[0_0_15px_rgba(0,168,255,0.05)] mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                    EXIFTOOL_TERMINAL
+                </div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pr-24 border-b border-ctosBlue/30 pb-3">
+                    <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        Terminal de Análisis Forense
+                    </h3>
+                    <div class="flex flex-wrap gap-2 font-mono text-[10px]">
+                        <button onclick="setSimPhase(1)" class="px-2 py-1 bg-black border border-white/20 hover:border-ctosBlue text-gray-300 hover:text-white transition-colors">1. Analizar Word (.docx)</button>
+                        <button onclick="setSimPhase(2)" class="px-2 py-1 bg-black border border-white/20 hover:border-ctosBlue text-gray-300 hover:text-white transition-colors">2. Analizar Imagen (.jpg)</button>
+                        <button onclick="setSimPhase(3)" class="px-2 py-1 bg-emerald-900/20 border border-emerald-500/30 hover:bg-emerald-900/60 text-emerald-400 transition-colors">3. Sanitizar Archivo</button>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-[#0a0a0c] border border-white/10 font-mono text-xs flex flex-col h-[350px]">
+                    <div class="flex justify-between items-center text-gray-500 border-b border-white/10 pb-2 mb-2 uppercase tracking-widest text-[10px]">
+                        <span>> FORENSIC WORKSTATION (root@ctOS)</span>
+                        <span id="simPhaseIndicator" class="text-ctosBlue font-bold">FASE 1: EXTRACCIÓN DOCUMENTAL</span>
+                    </div>
+                    <div id="simOutputBox" class="flex-1 overflow-y-auto text-green-400 whitespace-pre-wrap select-all leading-relaxed">
+<!-- Contenido inicial cargado vía JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- RESULTADOS FASE I Y II (TABLAS CON PREGUNTAS) -->
+            <section class="border border-white/5 bg-black/40 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-purple-900/40 border-l border-b border-purple-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-purple-400 tracking-widest">
+                    DATA_EXTRACTION
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-white/10 pb-3 mb-6 pr-24">
+                    Extracción y Análisis de Resultados
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- FASE I -->
+                    <div>
+                        <h4 class="font-bold text-ctosBlue uppercase text-sm mb-3 border-b border-ctosBlue/30 pb-2">> Parte I. Documento Word</h4>
+                        <p class="text-xs font-mono text-gray-400 mb-3">Target: <code class="text-gray-300">WOA database application form.docx</code></p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs border border-white/10">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-gray-400 bg-white/5 font-cyber tracking-widest uppercase">
+                                        <th class="p-3 w-3/5">Pregunta de Análisis</th>
+                                        <th class="p-3 w-2/5">Valor Extraído</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5 font-mono text-gray-300">
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">¿Cómo categorizó el archivo INTERPOL?</td>
+                                        <td class="p-3 text-ctosBlue align-top">Unclassified</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">¿Qué template fue utilizado para la elaboración del archivo por parte de INTERPOL?</td>
+                                        <td class="p-3 text-ctosBlue align-top">G03 Basic Doc SP.dotx</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">¿Cuál fue el tiempo total de edición del fichero?</td>
+                                        <td class="p-3 text-ctosBlue align-top">45 minutos</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">Identifique la Compañía propietaria del fichero.</td>
+                                        <td class="p-3 text-ctosBlue align-top">OIPC - INTERPOL</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">¿Quién realizó la última modificación del fichero?</td>
+                                        <td class="p-3 text-ctosBlue align-top">Carolyn Lejeune</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">¿Cuál fue la fecha de creación del fichero en investigación?</td>
+                                        <td class="p-3 text-ctosBlue align-top">2019:05:03 15:35:00Z</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">De acuerdo al análisis de metadatos del fichero de INTERPOL, identifique el creador del mismo.</td>
+                                        <td class="p-3 text-ctosBlue align-top">Carolyn Lejeune</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- FASE II -->
+                    <div>
+                        <h4 class="font-bold text-amber-500 uppercase text-sm mb-3 border-b border-amber-500/30 pb-2">> Parte II. Imagen Fotográfica</h4>
+                        <p class="text-xs font-mono text-gray-400 mb-3">Target: <code class="text-gray-300">XiaomiMiA2Lite.jpg</code></p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs border border-white/10">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-gray-400 bg-white/5 font-cyber tracking-widest uppercase">
+                                        <th class="p-3 w-3/5">Pregunta de Análisis</th>
+                                        <th class="p-3 w-2/5">Valor Extraído</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5 font-mono text-gray-300">
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">¿Cuál fue la apertura ISO utilizada?</td>
+                                        <td class="p-3 text-amber-400 align-top">100</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">¿Cuál es la longitud focal de la cámara con la que fue capturada la imagen?</td>
+                                        <td class="p-3 text-amber-400 align-top">3.8 MM</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">¿Señale si se utilizó la captura con Flash para obtener la imagen?</td>
+                                        <td class="p-3 text-amber-400 align-top">Off, Did not fire</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">Señale la fecha de creación del archivo.</td>
+                                        <td class="p-3 text-amber-400 align-top">2020:05:28 18:11:41</td>
+                                    </tr>
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="p-3 font-bold text-white align-top">Identifique los datos de ubicación GPS y señale el lugar exacto dónde la fotografía fue tomada.</td>
+                                        <td class="p-3 align-top">
+                                            <span class="block text-gray-400">Lat: 51.253610° N</span>
+                                            <span class="block text-gray-400 border-b border-white/10 pb-1 mb-1">Lon: 0.539426° W</span>
+                                            <span class="block font-bold text-green-400">Coord: 51.253610, -0.539426</span>
+                                            <span class="block mt-2 text-[10px] text-gray-300">Guildford, Surrey, Reino Unido</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- LÍNEA DE TIEMPO DEL ANÁLISIS (PROCEDIMIENTO) -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    OPERATION_LOG
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-8 pr-24">
+                    Procedimiento Forense y de Sanitización
+                </h3>
+                
+                <div class="relative pl-6 sm:pl-8 border-l-2 border-ctosBlue/20 space-y-12 font-mono text-sm text-gray-300">
+                    
+                    <!-- Paso 1 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">1</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Análisis de Metadatos Documentales</h4>
+                        <p class="mb-3">Se utilizó la interfaz gráfica de ExifTool para examinar el documento de Word <code class="text-ctosBlue">WOA database application form.docx</code>. El análisis reveló datos corporativos (OIPC - INTERPOL), tiempos de edición y la identidad de la creadora (Carolyn Lejeune).</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act15/1.PNG" alt="ExifTool Document Analysis" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 2 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">2</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Geolocalización a partir de Fotografía (OSINT)</h4>
+                        <p class="mb-3">El análisis de la imagen <code class="text-amber-400">XiaomiMiA2Lite.jpg</code> expuso las coordenadas GPS exactas donde fue capturada la fotografía. Como la longitud indicó referencia Oeste (West), el valor se ingresó con signo negativo en Google Maps: <code class="text-green-400 font-bold">51.253610, -0.539426</code>. Las coordenadas dirigieron a una zona residencial en Guildford, Surrey, Reino Unido.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act15/2.png" alt="Google Maps Geolocation" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 3 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">3</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Proceso de Sanitización de Datos</h4>
+                        <p class="mb-3">Para eliminar los metadatos expuestos, se seleccionó la imagen en ExifTool y mediante el menú superior se accedió a <code class="text-emerald-400">Modify > Remove metadata...</code>.</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act15/3.png" alt="Modify Menu ExifTool" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 4 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">4</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Ejecución del Borrado Total</h4>
+                        <p class="mb-3">En la ventana emergente, se marcó explícitamente la casilla <code class="text-emerald-400 font-bold">-remove ALL metadata</code> para asegurar la purga completa de datos Exif, Xmp, GPS e IPTC. Posteriormente, se presionó el botón Execute.</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act15/4.png" alt="Remove All Metadata Checkbox" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 5 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">5</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Verificación de Sanitización Exitosa</h4>
+                        <p class="mb-3">Al recargar el archivo en la herramienta, se comprobó que todos los metadatos de autoría, ubicación y hardware habían desaparecido. Únicamente se conservaron los metadatos de "Sistema" (tamaño, permisos y tipo MIME), obligatorios para que el sistema operativo reconozca el archivo.</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act15/5.png" alt="Metadata Cleared" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- MODAL PARA AMPLIAR IMÁGENES -->
+    <div id="image-modal" class="fixed inset-0 z-[40000] bg-black/95 backdrop-blur-md hidden flex-col justify-center items-center p-4 transition-opacity duration-300 opacity-0" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors outline-none font-cyber font-bold text-2xl hover:scale-110">
+            [X]
+        </button>
+        <img id="modal-img-src" src="" alt="Captura Ampliada" class="max-w-full max-h-full border-2 border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.4)]" onclick="event.stopPropagation()">
+        <p class="text-ctosBlue font-mono text-xs mt-4 tracking-widest">> Clickea en cualquier parte para cerrar <</p>
+    </div>
+
+    <script>
+        // Simulador de Terminal ExifTool
+        function setSimPhase(phase) {
+            const outBox = document.getElementById('simOutputBox');
+            const indicator = document.getElementById('simPhaseIndicator');
+            
+            let output = "";
+
+            if (phase === 1) {
+                indicator.innerText = "FASE 1: EXTRACCIÓN DOCUMENTAL";
+                indicator.className = "text-ctosBlue font-bold";
+                output = `root@ctOS:~/Forensics$ exiftool "WOA database application form.docx"
+ExifTool Version Number         : 12.68
+File Name                       : WOA database application form.docx
+File Size                       : 85 kB
+File Modification Date/Time     : 2023:10:22 12:44:28-06:00
+File Type                       : DOCX
+MIME Type                       : application/vnd.openxmlformats-officedocument.wordprocessingml.document
+Interpol Classification         : Unclassified
+Template                        : G03 Basic Doc SP.dotx
+Total Edit Time                 : 45 minutes
+Pages                           : 1
+Words                           : 112
+Company                         : OIPC - INTERPOL
+Last Modified By                : Carolyn Lejeune
+Create Date                     : 2019:05:03 15:35:00Z
+Creator                         : Carolyn Lejeune
+Description                     : Document Title
+`;
+            } else if (phase === 2) {
+                indicator.innerText = "FASE 2: EXTRACCIÓN EXIF & GPS";
+                indicator.className = "text-amber-400 font-bold";
+                output = `root@ctOS:~/Forensics$ exiftool XiaomiMiA2Lite.jpg
+ExifTool Version Number         : 12.68
+File Name                       : XiaomiMiA2Lite.jpg
+File Size                       : 15 kB
+File Type                       : JPEG
+MIME Type                       : image/jpeg
+Make                            : Xiaomi
+Model                           : Mi A2 Lite
+ISO                             : 100
+Focal Length                    : 3.8 mm
+Flash                           : Off, Did not fire
+Create Date                     : 2020:05:28 18:11:41
+GPS Latitude Ref                : North
+GPS Latitude                    : 51 deg 15' 13.00" N
+GPS Longitude Ref               : West
+GPS Longitude                   : 0 deg 32' 21.93" W
+GPS Position                    : 51 deg 15' 13.00" N, 0 deg 32' 21.93" W
+`;
+            } else if (phase === 3) {
+                indicator.innerText = "FASE 3: SANITIZACIÓN DE METADATOS";
+                indicator.className = "text-emerald-500 font-bold animate-pulse";
+                output = `root@ctOS:~/Forensics$ exiftool -all= XiaomiMiA2Lite.jpg
+    1 image files updated
+
+root@ctOS:~/Forensics$ exiftool XiaomiMiA2Lite.jpg
+ExifTool Version Number         : 12.68
+File Name                       : XiaomiMiA2Lite.jpg
+File Size                       : 14 kB
+File Modification Date/Time     : 2026:10:28 02:35:57-06:00
+File Access Date/Time           : 2026:10:28 02:36:20-06:00
+File Permissions                : -rw-rw-rw-
+File Type                       : JPEG
+File Type Extension             : jpg
+MIME Type                       : image/jpeg
+Image Width                     : 8
+Image Height                    : 8
+Encoding Process                : Baseline DCT, Huffman coding
+Color Components                : 3
+[+] PROCESO DE SANITIZACIÓN COMPLETADO CON ÉXITO.
+`;
+            }
+            
+            // Simular escritura en terminal
+            outBox.innerHTML = "";
+            let i = 0;
+            const typeWriter = setInterval(() => {
+                outBox.innerHTML += output.charAt(i);
+                outBox.scrollTop = outBox.scrollHeight; // Auto-scroll
+                i++;
+                if (i >= output.length) {
+                    clearInterval(typeWriter);
+                }
+            }, 5);
+        }
+
+        window.onload = function() {
+            setSimPhase(1);
+        };
+
+        // Modal de Imágenes
+        const imageModal = document.getElementById('image-modal');
+        const modalImgSrc = document.getElementById('modal-img-src');
+
+        function openImageModal(src) {
+            modalImgSrc.src = src;
+            imageModal.classList.remove('hidden');
+            imageModal.classList.add('flex');
+            setTimeout(() => { imageModal.classList.remove('opacity-0'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            imageModal.classList.add('opacity-0');
+            setTimeout(() => {
+                imageModal.classList.add('hidden');
+                imageModal.classList.remove('flex');
+                modalImgSrc.src = "";
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Telemetría Header
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        // Matrix Background
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

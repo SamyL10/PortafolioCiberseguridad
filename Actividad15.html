@@ -102,8 +102,8 @@
             <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
                 <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
                 <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
-                <a href="Parcial2.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_2</a>
-                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Acceso Denegado">> PARCIAL_3</a>
+                <a href="Parcial2.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_2</a>
+                <a href="Parcial3.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_3</a>
                 <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
                 <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
                 <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
@@ -116,9 +116,9 @@
         
         <!-- Botón de regreso -->
         <div class="mb-6">
-            <a href="Parcial2.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 h18"></path></svg>
-                [ REGRESAR_AL_DIRECTORIO_P2 ]
+            <a href="Parcial3.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO_P3 ]
             </a>
         </div>
 
@@ -336,23 +336,33 @@
                         <h4 class="font-bold text-white uppercase text-base mb-2">Análisis de Metadatos Documentales</h4>
                         <p class="mb-3">Se utilizó la interfaz gráfica de ExifTool para examinar el documento de Word <code class="text-ctosBlue">WOA database application form.docx</code>. El análisis reveló datos corporativos (OIPC - INTERPOL), tiempos de edición y la identidad de la creadora (Carolyn Lejeune).</p>
                         <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
-                            <img src="Imagenes/Laboratorios/Act15/1.PNG" alt="ExifTool Document Analysis" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                            <img src="Imagenes/Laboratorios/Act15/1.png" alt="ExifTool Document Analysis" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
                         </div>
                     </div>
 
                     <!-- Paso 2 -->
                     <div class="relative">
                         <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">2</div>
-                        <h4 class="font-bold text-white uppercase text-base mb-2">Geolocalización a partir de Fotografía (OSINT)</h4>
-                        <p class="mb-3">El análisis de la imagen <code class="text-amber-400">XiaomiMiA2Lite.jpg</code> expuso las coordenadas GPS exactas donde fue capturada la fotografía. Como la longitud indicó referencia Oeste (West), el valor se ingresó con signo negativo en Google Maps: <code class="text-green-400 font-bold">51.253610, -0.539426</code>. Las coordenadas dirigieron a una zona residencial en Guildford, Surrey, Reino Unido.</p>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Análisis de Metadatos Fotográficos</h4>
+                        <p class="mb-3">Se repitió el análisis apuntando ahora al archivo <code class="text-amber-400">XiaomiMiA2Lite.jpg</code>. La extracción reveló metadatos críticos como el hardware utilizado, el uso del flash y las coordenadas precisas (<code class="font-bold">GPS Latitude/Longitude</code>) incrustadas al momento de tomar la fotografía.</p>
                         <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
-                            <img src="Imagenes/Laboratorios/Act15/2.png" alt="Google Maps Geolocation" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            <img src="Imagenes/Laboratorios/Act15/6.png" alt="ExifTool Image Analysis" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
                         </div>
                     </div>
 
                     <!-- Paso 3 -->
                     <div class="relative">
-                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">3</div>
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">3</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Geolocalización a partir de Fotografía (OSINT)</h4>
+                        <p class="mb-3">El análisis de la imagen expuso las coordenadas GPS exactas. Como la longitud indicó referencia Oeste (West), el valor se ingresó con signo negativo en Google Maps: <code class="text-green-400 font-bold">51.253610, -0.539426</code>. Las coordenadas dirigieron a una zona residencial en Guildford, Surrey, Reino Unido.</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act15/2.png" alt="Google Maps Geolocation" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 4 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">4</div>
                         <h4 class="font-bold text-white uppercase text-base mb-2">Proceso de Sanitización de Datos</h4>
                         <p class="mb-3">Para eliminar los metadatos expuestos, se seleccionó la imagen en ExifTool y mediante el menú superior se accedió a <code class="text-emerald-400">Modify > Remove metadata...</code>.</p>
                         <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
@@ -360,9 +370,9 @@
                         </div>
                     </div>
 
-                    <!-- Paso 4 -->
+                    <!-- Paso 5 -->
                     <div class="relative">
-                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">4</div>
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">5</div>
                         <h4 class="font-bold text-white uppercase text-base mb-2">Ejecución del Borrado Total</h4>
                         <p class="mb-3">En la ventana emergente, se marcó explícitamente la casilla <code class="text-emerald-400 font-bold">-remove ALL metadata</code> para asegurar la purga completa de datos Exif, Xmp, GPS e IPTC. Posteriormente, se presionó el botón Execute.</p>
                         <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
@@ -370,9 +380,9 @@
                         </div>
                     </div>
 
-                    <!-- Paso 5 -->
+                    <!-- Paso 6 -->
                     <div class="relative">
-                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">5</div>
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">6</div>
                         <h4 class="font-bold text-white uppercase text-base mb-2">Verificación de Sanitización Exitosa</h4>
                         <p class="mb-3">Al recargar el archivo en la herramienta, se comprobó que todos los metadatos de autoría, ubicación y hardware habían desaparecido. Únicamente se conservaron los metadatos de "Sistema" (tamaño, permisos y tipo MIME), obligatorios para que el sistema operativo reconozca el archivo.</p>
                         <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">

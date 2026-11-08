@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 16: Adquisición Forense con FTK Imager // ctOS Database</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: -1; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .zoomable-img { cursor: zoom-in; transition: transform 0.3s ease, filter 0.3s ease; }
+        .zoomable-img:hover { filter: brightness(1.1); }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">SYS_ACTIVE</div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">SAMUEL LÓPEZ GÓMEZ</h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="Parcial2.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_2</a>
+                <a href="Parcial3.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <!-- Botón de regreso -->
+        <div class="mb-6">
+            <a href="Parcial3.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO_P3 ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <!-- ETIQUETA SUPERIOR -->
+            <div class="absolute top-0 right-0 bg-blue-900/40 border-l border-b border-blue-500/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-blue-400 tracking-widest animate-pulse">
+                FORENSIC_DOSSIER
+            </div>
+
+            <!-- TÍTULO PRINCIPAL Y METADATA -->
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-ctosBlue/30 pb-6 mb-2">
+                <div class="flex items-start gap-4">
+                    <svg class="w-10 h-10 text-blue-500 animate-pulse flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest leading-tight">Actividad 16: Adquisición forense con FTK Imager</h2>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-blue-900/40 text-blue-400 border border-blue-500/50">DIGITAL FORENSICS</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-emerald-900/40 text-emerald-400 border border-emerald-500/50">BIT-STREAM IMAGE</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50">RAW (DD)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BARRA DE DESCARGA -->
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-5 relative group flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest">
+                    ATTACHMENT_FOUND
+                </div>
+                <div class="flex items-center gap-4 w-full md:w-auto mt-2 md:mt-0">
+                    <div class="text-ctosBlue flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-base">Reporte Original</h4>
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Documentación de la adquisición forense // Extensión: .pdf</p>
+                    </div>
+                </div>
+                <a href="Actividad16.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full md:w-auto cursor-crosshair flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_ARCHIVO ]
+                </a>
+            </div>
+
+            <!-- INTRODUCCIÓN Y OBJETIVOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Concepto -->
+                <section class="border border-white/10 bg-black/60 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-white/5 border-l border-b border-white/20 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-gray-400">CONTEXT</div>
+                    <h3 class="text-sm font-bold text-ctosBlue uppercase tracking-widest mb-4 flex items-center gap-2">
+                        ¿Qué es una Imagen Forense Bit a Bit?
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow">
+                        Una imagen forense copia todos los sectores de un dispositivo, incluyendo el espacio no asignado y archivos borrados, y no solo los archivos visibles[cite: 13]. Se trabaja exclusivamente sobre esta copia para garantizar que la evidencia original quede intacta, preservando su validez legal y permitiendo responder a incidentes.
+                    </p>
+                </section>
+                <!-- Objetivo -->
+                <section class="border border-blue-500/30 bg-blue-900/10 p-6 relative flex flex-col shadow-[0_0_15px_rgba(59,130,246,0.05)]">
+                    <div class="absolute top-0 right-0 bg-blue-500/20 border-l border-b border-blue-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-blue-400">MISSION_GOAL</div>
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Objetivo de la Evaluación
+                    </h3>
+                    <p class="text-sm leading-relaxed text-blue-100/80 font-mono flex-grow">
+                        Obtener una copia exacta de un dispositivo de almacenamiento (USB de 15 GB) utilizando la herramienta <code class="font-bold text-blue-400">FTK Imager</code>[cite: 13, 14]. El proceso incluye configurar los metadatos del caso, generar una imagen en formato <code class="text-blue-400">Raw (dd)</code> fragmentada a 1500 MB y demostrar la integridad de la copia verificando los algoritmos hash MD5 y SHA-1[cite: 13, 14].
+                    </p>
+                </section>
+            </div>
+
+            <!-- SIMULADOR DINÁMICO (TERMINAL JS) -->
+            <section class="border border-ctosBlue/50 bg-[#050505] p-6 relative shadow-[0_0_15px_rgba(0,168,255,0.05)] mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/20 border-l border-b border-ctosBlue/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest">
+                    IMAGER_TERMINAL
+                </div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pr-24 border-b border-ctosBlue/30 pb-3">
+                    <h3 class="text-lg md:text-xl font-cyber font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        Simulador de Adquisición (CLI Mode)
+                    </h3>
+                    <div class="flex flex-wrap gap-2 font-mono text-[10px]">
+                        <button onclick="setSimPhase(1)" class="px-2 py-1 bg-black border border-white/20 hover:border-ctosBlue text-gray-300 hover:text-white transition-colors">1. Configurar Tarea</button>
+                        <button onclick="setSimPhase(2)" class="px-2 py-1 bg-black border border-white/20 hover:border-ctosBlue text-gray-300 hover:text-white transition-colors">2. Adquirir Imagen (DD)</button>
+                        <button onclick="setSimPhase(3)" class="px-2 py-1 bg-emerald-900/20 border border-emerald-500/30 hover:bg-emerald-900/60 text-emerald-400 transition-colors">3. Verificar Hashes</button>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-[#0a0a0c] border border-white/10 font-mono text-xs flex flex-col h-[350px]">
+                    <div class="flex justify-between items-center text-gray-500 border-b border-white/10 pb-2 mb-2 uppercase tracking-widest text-[10px]">
+                        <span>> FORENSIC WORKSTATION (root@ctOS)</span>
+                        <span id="simPhaseIndicator" class="text-ctosBlue font-bold">FASE 1: PARÁMETROS DE CASO</span>
+                    </div>
+                    <div id="simOutputBox" class="flex-1 overflow-y-auto text-green-400 whitespace-pre-wrap select-all leading-relaxed">
+<!-- Contenido inicial cargado vía JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- RESULTADOS Y VERIFICACIÓN (TABLA) -->
+            <section class="border border-white/5 bg-black/40 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-blue-900/40 border-l border-b border-blue-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-blue-400 tracking-widest">
+                    VERIFICATION_MATRIX
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-white/10 pb-3 mb-6 pr-24">
+                    Resultados de la Adquisición Forense
+                </h3>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs md:text-sm border border-white/10">
+                        <thead>
+                            <tr class="border-b border-white/10 text-gray-400 bg-white/5 font-cyber tracking-widest uppercase">
+                                <th class="p-3 w-2/5">Elemento / Parámetro</th>
+                                <th class="p-3 w-3/5">Detalle o Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 font-mono text-gray-300">
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Evidencia Origen</td>
+                                <td class="p-3 text-ctosBlue">SanDisk Cruzer Blade USB Device, 15 GB (\\.\PHYSICALDRIVE3)[cite: 14]</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Formato y Fragmentación</td>
+                                <td class="p-3 text-ctosBlue">Raw (dd) / Fragmentos de 1500 MB (10 segmentos generados)[cite: 14, 29, 30]</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Inicio y Término de Adquisición</td>
+                                <td class="p-3 text-ctosBlue">14:40:15 - 14:50:19 (0:10:04 Elapsed Time)[cite: 23, 28, 33]</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Sectores y Tamaño Origen</td>
+                                <td class="p-3 text-ctosBlue">30,031,872 sectores (14664 MB de datos)[cite: 24, 29]</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Verificación MD5</td>
+                                <td class="p-3 font-bold text-emerald-400">6060be327445deec73a3f2609c480f3d (Match)[cite: 29]</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Verificación SHA-1</td>
+                                <td class="p-3 font-bold text-emerald-400">293496cefb3ce40238c9c8d58d271ee6aad1ea49 (Match)[cite: 29]</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Bloques Dañados</td>
+                                <td class="p-3 font-bold text-emerald-400">Ninguno (No bad blocks found in image)[cite: 25, 29]</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- COMPARACIÓN DE FORMATOS DE IMAGEN -->
+            <section class="border border-white/5 bg-black/40 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-blue-900/40 border-l border-b border-blue-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-blue-400 tracking-widest">
+                    FORMAT_COMPARISON
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-white/10 pb-3 mb-6 pr-24">
+                    Comparación de Formatos Forenses
+                </h3>
+                
+                <p class="text-sm font-mono text-gray-300 mb-6">
+                    Se utilizó el formato <code class="text-ctosBlue font-bold">Raw (dd)</code> por ser el estándar crudo y universal. Sin embargo, en el ámbito forense profesional también se utilizan formatos como E01 y SMART, que permiten compresión y encapsulan los datos del caso y hashes dentro del mismo archivo, a diferencia del Raw que requiere un <code class="text-ctosBlue">.txt</code> separado[cite: 31].
+                </p>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs md:text-sm border border-white/10">
+                        <thead>
+                            <tr class="border-b border-white/10 text-gray-400 bg-white/5 font-cyber tracking-widest uppercase">
+                                <th class="p-3">Característica[cite: 31]</th>
+                                <th class="p-3 text-ctosBlue">Raw (dd)[cite: 31]</th>
+                                <th class="p-3">E01 (EnCase)[cite: 31]</th>
+                                <th class="p-3">SMART (.s01)[cite: 31]</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 font-mono text-gray-300">
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Extensión Típica</td>
+                                <td class="p-3 text-ctosBlue">.dd, .raw, .001</td>
+                                <td class="p-3">.E01, .E02</td>
+                                <td class="p-3">.s01</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Admite Compresión</td>
+                                <td class="p-3 font-bold text-red-400">No</td>
+                                <td class="p-3 font-bold text-emerald-400">Sí</td>
+                                <td class="p-3 font-bold text-emerald-400">Sí</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Datos en Archivo</td>
+                                <td class="p-3 text-gray-400">No, van en un .txt aparte</td>
+                                <td class="p-3 text-white">Sí</td>
+                                <td class="p-3 text-white">Limitados</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Verificación Interna</td>
+                                <td class="p-3 text-gray-400">No, depende de hashes externos</td>
+                                <td class="p-3 text-white">Sí</td>
+                                <td class="p-3 text-white">Sí</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">Compatibilidad</td>
+                                <td class="p-3 font-bold text-ctosBlue">Muy alta</td>
+                                <td class="p-3 text-white">Muy alta</td>
+                                <td class="p-3 text-white">Menor</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- LÍNEA DE TIEMPO DEL ANÁLISIS (PROCEDIMIENTO) -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    OPERATION_LOG
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-8 pr-24">
+                    Procedimiento de Adquisición (Kill Chain)
+                </h3>
+                
+                <div class="relative pl-6 sm:pl-8 border-l-2 border-ctosBlue/20 space-y-12 font-mono text-sm text-gray-300">
+                    
+                    <!-- FASE A: PREPARACIÓN -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-gray-400 rounded-full flex items-center justify-center font-bold text-gray-400 text-[10px]">A</div>
+                        <h4 class="font-bold text-gray-300 uppercase text-sm mb-4 border-b border-gray-600/30 pb-2">Etapa A. Preparación de la herramienta</h4>
+                    </div>
+
+                    <!-- Paso 1 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">1</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Instalación como Administrador[cite: 15]</h4>
+                        <p class="mb-3">Se instaló y ejecutó FTK Imager con permisos de administrador en el equipo de trabajo, necesarios para poder acceder directamente a dispositivos físicos como <code class="text-ctosBlue">\\.\PHYSICALDRIVE</code> y evitar bloqueos de Windows[cite: 15].</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/1.png" alt="Programa Instalado" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 2 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">2</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Validación de la Herramienta[cite: 15, 16]</h4>
+                        <p class="mb-3">Se abrió el programa y se confirmó que la interfaz cargó sin errores antes de conectar la evidencia. Se registró la versión de la herramienta <code class="text-ctosBlue">4.3.1.1</code> para efectos de reproducibilidad técnica en el reporte[cite: 15, 16].</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/2.png" alt="Ventana principal" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- FASE B: CONFIGURACIÓN -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px]">B</div>
+                        <h4 class="font-bold text-amber-400 uppercase text-sm mb-4 border-b border-amber-500/30 pb-2">Etapa B. Configuración de la Adquisición</h4>
+                    </div>
+
+                    <!-- Paso 3 y 4 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">3</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Conexión e Inicio de Copia[cite: 16, 17]</h4>
+                        <p class="mb-3">Se conectó la evidencia USB minimizando su tiempo de exposición. En el menú de FTK Imager, se seleccionó la opción <code class="text-amber-400">File > Create Disk Image...</code> para iniciar el asistente de copiado[cite: 16, 17].</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/3.png" alt="Menú Create Disk Image" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 5 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">4</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Selección del Tipo de Origen[cite: 17, 18]</h4>
+                        <p class="mb-3">En el cuadro de diálogo se seleccionó <code class="text-amber-400 font-bold">Physical Drive</code>, lo que garantiza copiar el dispositivo completo incluyendo la tabla de particiones, espacio no asignado y restos de archivos borrados[cite: 17, 18].</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/4.png" alt="Select Source Physical Drive" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 6 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">5</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Selección del Dispositivo Físico[cite: 18]</h4>
+                        <p class="mb-3">De la lista desplegable se escogió el objetivo preciso: <code class="text-amber-400">\\.\PHYSICALDRIVE3 - SanDisk Cruzer Blade</code> (15 GB). Esta confirmación es crítica para evitar clonar por accidente discos duros internos del equipo forense[cite: 18].</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/5.png" alt="Select Drive" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 7 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">6</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Definición de Destino[cite: 19]</h4>
+                        <p class="mb-3">Con el origen establecido, se hizo clic en el botón <code class="text-amber-400">Add...</code> para configurar el formato de la imagen y la ruta en donde se guardaría la copia bit a bit en la estación forense[cite: 19].</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/6.png" alt="Create Image Add Destination" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 8 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">7</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Formato de la Imagen Forense[cite: 19]</h4>
+                        <p class="mb-3">Se seleccionó el formato <code class="text-amber-400 font-bold">Raw (dd)</code>. Esto genera una copia exacta byte por byte, sin compresión ni metadatos internos, siendo el formato más crudo y universalmente compatible con herramientas de análisis[cite: 19].</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/7.png" alt="Select Image Type Raw" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 9 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">8</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Información de la Cadena de Custodia[cite: 20]</h4>
+                        <p class="mb-3">Se llenaron los cinco campos obligatorios (Número de Caso, Evidencia, Descripción, Examinador y Notas) con información de <code class="text-amber-400">InfoCrim-01</code>. Estos datos se escribirán en el archivo de texto .txt asociado a la imagen para asegurar el seguimiento forense[cite: 20].</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/8.png" alt="Evidence Item Information" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 10 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">9</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Carpeta y Segmentación[cite: 20, 21]</h4>
+                        <p class="mb-3">La imagen se configuró para guardarse en el directorio local <code class="text-amber-400">InfoCrim13</code> y se nombró siguiendo el estándar <code class="text-amber-400">infocrim_LopezGomezSamuel</code>. Se mantuvo el tamaño de fragmentación por defecto en 1500 MB para generar archivos fáciles de gestionar sin aplicar compresión[cite: 20, 21].</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/9.png" alt="Select Image Destination" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 11 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">10</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Activación de la Verificación[cite: 21, 22]</h4>
+                        <p class="mb-3">En la pantalla final se dejó marcada la casilla <code class="text-amber-400 font-bold">Verify images after they are created</code>. Este paso es fundamental, ya que obliga a FTK a recalcular y comparar los hashes de la copia contra los de la USB original al terminar el proceso[cite: 21, 22].</p>
+                        <div class="bg-black/80 border border-amber-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/10.png" alt="Verify images checked" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- FASE C: EJECUCIÓN Y VERIFICACIÓN -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px]">C</div>
+                        <h4 class="font-bold text-emerald-400 uppercase text-sm mb-4 border-b border-emerald-500/30 pb-2">Etapa C. Ejecución y Verificación</h4>
+                    </div>
+
+                    <!-- Paso 12 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">11</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Inicio de la Adquisición[cite: 22]</h4>
+                        <p class="mb-3">Al oprimir <code class="text-emerald-400">Start</code>, comenzó la lectura de la memoria. Se documentó la marca de tiempo (02:40 p.m. según el reloj del sistema) para validar con el reporte final, asegurando la reproducibilidad del proceso forense[cite: 22].</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/11.png" alt="Inicio de adquisición y reloj" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 13 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">12</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Fin de la Lectura USB[cite: 23]</h4>
+                        <p class="mb-3">A las 02:50 p.m., el sistema arrojó el mensaje <code class="text-emerald-400">Image created successfully</code> tras un tiempo transcurrido (Elapsed Time) de 10 minutos con 4 segundos, durante los cuales no hubo interacciones para evitar cualquier alteración[cite: 23].</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/12.png" alt="Fin de adquisición y reloj" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">13</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Resumen de la Adquisición[cite: 23]</h4>
+                        <p class="mb-3">Se abrió el menú <code class="text-emerald-400">Image Summary...</code> para examinar inmediatamente el resultado final y comprobar la consistencia de los datos reportados contra la configuración introducida[cite: 23].</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/13.png" alt="Ventana final status" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 14 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">14</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Geometría del Dispositivo (Summary Pt. 1)[cite: 23, 24]</h4>
+                        <p class="mb-3">El reporte confirmó el número de sectores y cilindros de la SanDisk Cruzer Blade, totalizando 30,031,872 sectores para los 14664 MB del dispositivo físico[cite: 23, 24].</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/14.png" alt="Image Summary Geometry" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">15</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Segmentos y Hashes (Summary Pt. 2)[cite: 24]</h4>
+                        <p class="mb-3">Se validó la generación de los 10 segmentos de la imagen (<code class="text-emerald-400">.001</code> al <code class="text-emerald-400">.010</code>) y el cálculo de los hashes criptográficos asociados para resguardar la identidad digital de la copia[cite: 24].</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/15.png" alt="Image Summary Segments" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 15 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">16</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Validación de Integridad Matemática[cite: 25]</h4>
+                        <p class="mb-3">La herramienta finalizó comparando los hashes MD5 y SHA-1 recién leídos contra la copia en el disco; ambos arrojaron <code class="font-bold text-emerald-400">Match</code> y 0 bloques dañados, confirmando que la imagen forense es idéntica bit a bit al original de 15GB[cite: 25].</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 max-w-4xl">
+                            <div class="bg-black/80 border border-emerald-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act16/16.png" alt="Image Verification Results text" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-emerald-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act16/17.png" alt="Verify Results Match window" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 16 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">17</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Verificación de Ficheros en Disco[cite: 25, 26]</h4>
+                        <p class="mb-3">Se abrió la carpeta destino en el Explorador de Windows, confirmando la creación de los 10 segmentos (9 de tamaño completo y el final) y la presencia crítica del archivo de reporte. Estos segmentos no deben abrirse directamente en el S.O.[cite: 25, 26].</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/18.png" alt="Archivos en Explorador de Windows" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <!-- Paso 17 -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-emerald-500 rounded-full flex items-center justify-center font-bold text-emerald-500 text-[10px] shadow-[0_0_10px_rgba(16,185,129,0.8)]">18</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Revisión del Registro Oficial (.TXT)[cite: 27]</h4>
+                        <p class="mb-3">Se abrió el archivo <code class="text-emerald-400">.txt</code> de FTK Imager. Dado que la imagen <code class="font-bold">Raw (dd)</code> no incrusta la cadena de custodia dentro del archivo (a diferencia de E01), este reporte de texto fungirá como el documento de respaldo de la adquisición oficial[cite: 27].</p>
+                        <div class="bg-black/80 border border-emerald-500/20 p-2 max-w-2xl">
+                            <img src="Imagenes/Laboratorios/Act16/19.png" alt="Reporte TXT abierto" class="w-full h-auto border border-emerald-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- MODAL PARA AMPLIAR IMÁGENES -->
+    <div id="image-modal" class="fixed inset-0 z-[40000] bg-black/95 backdrop-blur-md hidden flex-col justify-center items-center p-4 transition-opacity duration-300 opacity-0" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors outline-none font-cyber font-bold text-2xl hover:scale-110">
+            [X]
+        </button>
+        <img id="modal-img-src" src="" alt="Captura Ampliada" class="max-w-full max-h-full border-2 border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.4)]" onclick="event.stopPropagation()">
+        <p class="text-ctosBlue font-mono text-xs mt-4 tracking-widest">> Clickea en cualquier parte para cerrar <</p>
+    </div>
+
+    <script>
+        // Simulador de Terminal FTK
+        function setSimPhase(phase) {
+            const outBox = document.getElementById('simOutputBox');
+            const indicator = document.getElementById('simPhaseIndicator');
+            
+            let output = "";
+
+            if (phase === 1) {
+                indicator.innerText = "FASE 1: PARÁMETROS DE CASO";
+                indicator.className = "text-ctosBlue font-bold";
+                output = `root@ctOS:~/Forensics$ ftkimager-cli --config
+[+] INICIALIZANDO HERRAMIENTA DE ADQUISICIÓN...
+    - AccessData FTK Imager 4.3.1.1 cargado en memoria.
+
+[+] ESTABLECIENDO PARÁMETROS DE EVIDENCIA:
+    - Case Number        : InfoCrim-01_21.11.2023
+    - Evidence Number    : 00
+    - Unique Description : CNO IV - análisis de incidente de fraude bancario
+    - Examiner           : López Gómez Samuel
+    - Notes              : Adquisición realizada en LIF de la UPSLP
+
+[+] SELECCIÓN DE ORIGEN Y DESTINO:
+    - Source Type        : Physical Drive
+    - Target Device      : \\\\.\\PHYSICALDRIVE3 (SanDisk Cruzer Blade 15GB)
+    - Output Format      : RAW (dd)
+    - Target Path        : C:\\Users\\Samlogo10\\Desktop\\InfoCrim13\\infocrim_LopezGomezSamuel
+    - Fragment Size      : 1500 MB
+    - Compression        : 0 (None)
+    - Auto-Verify        : ENABLED
+`;
+            } else if (phase === 2) {
+                indicator.innerText = "FASE 2: ADQUISICIÓN DE IMAGEN";
+                indicator.className = "text-amber-400 font-bold";
+                output = `root@ctOS:~/Forensics$ ftkimager-cli --acquire \\\\.\\PHYSICALDRIVE3
+[!] INICIANDO LECTURA DE DISCO FÍSICO...
+    - Started at: Sun Nov  8 14:40:15 2026
+
+[>>>>>>>>------------------------------------------] 15% (1.50 GB of 15.38 GB)
+[>>>>>>>>>>>>>>>>>>>-------------------------------] 35% (5.02 GB of 15.38 GB)
+[>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>----------------] 68% (9.84 GB of 15.38 GB)
+[>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>---] 92% (13.7 GB of 15.38 GB)
+[>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] 100% (15.38 GB)
+
+[+] ADQUISICIÓN COMPLETADA EXITOSAMENTE.
+    - Finished at: Sun Nov  8 14:50:19 2026
+    - Elapsed Time: 0:10:04
+    - Segmentos generados: 10 files (.001 to .010)
+    - Sectores Leídos: 30,031,872
+`;
+            } else if (phase === 3) {
+                indicator.innerText = "FASE 3: VERIFICACIÓN CRIPTOGRÁFICA";
+                indicator.className = "text-emerald-500 font-bold animate-pulse";
+                output = `root@ctOS:~/Forensics$ ftkimager-cli --verify infocrim_LopezGomezSamuel.001
+[!] INICIANDO COMPROBACIÓN DE HASHES...
+    - Verification started: Sun Nov  8 14:50:27 2026
+
+[+] LEYENDO ARCHIVOS DE IMAGEN GENERADOS (15.38 GB)...
+    Calculando MD5 y SHA-1...
+
+[+] RESULTADOS DE VERIFICACIÓN:
+    - MD5 Computed : 6060be327445deec73a3f2609c480f3d
+    - MD5 Reported : 6060be327445deec73a3f2609c480f3d
+    >> VERDICT     : MATCH (Verified)
+
+    - SHA1 Computed: 293496cefb3ce40238c9c8d58d271ee6aad1ea49
+    - SHA1 Reported: 293496cefb3ce40238c9c8d58d271ee6aad1ea49
+    >> VERDICT     : MATCH (Verified)
+
+    - Bad Blocks List: No bad blocks found in image.
+    - Verification finished: Sun Nov  8 14:52:14 2026 (Elapsed: 0:01:47)
+[+] ESTADO: INTEGRIDAD CONFIRMADA. CADENA DE CUSTODIA SEGURA.
+`;
+            }
+            
+            // Simular escritura en terminal
+            outBox.innerHTML = "";
+            let i = 0;
+            const typeWriter = setInterval(() => {
+                outBox.innerHTML += output.charAt(i);
+                outBox.scrollTop = outBox.scrollHeight; // Auto-scroll
+                i++;
+                if (i >= output.length) {
+                    clearInterval(typeWriter);
+                }
+            }, 5);
+        }
+
+        window.onload = function() {
+            setSimPhase(1);
+        };
+
+        // Modal de Imágenes
+        const imageModal = document.getElementById('image-modal');
+        const modalImgSrc = document.getElementById('modal-img-src');
+
+        function openImageModal(src) {
+            modalImgSrc.src = src;
+            imageModal.classList.remove('hidden');
+            imageModal.classList.add('flex');
+            setTimeout(() => { imageModal.classList.remove('opacity-0'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            imageModal.classList.add('opacity-0');
+            setTimeout(() => {
+                imageModal.classList.add('hidden');
+                imageModal.classList.remove('flex');
+                modalImgSrc.src = "";
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Telemetría Header
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        // Matrix Background
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00a8ff';
+            ctx.font = fontSize + 'px "Fira Code", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    </script>
+</body>
+</html>

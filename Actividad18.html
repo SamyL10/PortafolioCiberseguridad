@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Act. 18: La huella digital de un cibercriminal // ctOS Database</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ctosBlue: '#00a8ff',
+                        ctosDark: '#0a0a0c',
+                        ctosGray: 'rgba(20, 20, 25, 0.75)'
+                    },
+                    fontFamily: {
+                        cyber: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; overflow-x: hidden; cursor: crosshair; }
+
+        #matrix-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; opacity: 0.25;
+        }
+
+        .vignette {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            z-index: -1; pointer-events: none;
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: -1; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+        }
+
+        .hud-corners { position: relative; }
+        .hud-corners::before, .hud-corners::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border-color: #00a8ff; border-style: solid;
+        }
+        .hud-corners::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .hud-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .zoomable-img { cursor: zoom-in; transition: transform 0.3s ease, filter 0.3s ease; }
+        .zoomable-img:hover { filter: brightness(1.1); }
+    </style>
+</head>
+<body class="font-mono text-gray-300 min-h-screen flex flex-col">
+
+    <canvas id="matrix-bg"></canvas>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+    
+    <div class="fixed top-2 right-4 z-50 flex items-center gap-2 font-cyber font-bold tracking-widest text-white text-xs opacity-70 pointer-events-none">
+        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+        <span>REC</span>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="bg-black/95 backdrop-blur-md border-b border-ctosBlue/50 py-3 px-4 md:px-6 sticky top-0 z-50 shadow-[0_4px_20px_rgba(0,168,255,0.15)] w-full group">
+        <div class="max-w-[1800px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+
+            <div class="flex items-center gap-4 w-full xl:w-auto justify-center xl:justify-start border-b border-white/10 xl:border-none pb-3 xl:pb-0">
+                <div class="flex-shrink-0 animate-pulse text-ctosBlue drop-shadow-[0_0_8px_rgba(0,168,255,0.8)] group-hover:drop-shadow-[0_0_15px_rgba(0,168,255,1)] transition-all duration-300">
+                    <svg viewBox="0 0 100 100" class="w-10 h-10 md:w-12 md:h-12 fill-current">
+                        <path d="M50 5 L95 25 L85 85 L50 95 L15 85 L5 25 Z" fill="none" stroke="currentColor" stroke-width="4"/>
+                        <path d="M25 35 L50 15 L75 35 L65 70 L50 55 L35 70 Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="flex flex-col items-start overflow-hidden">
+                    <div class="flex items-center gap-2 md:gap-3 flex-nowrap">
+                        <div class="bg-ctosBlue text-black font-cyber text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-widest flex-shrink-0">SYS_ACTIVE</div>
+                        <h1 class="font-cyber text-lg md:text-2xl font-bold tracking-widest text-white uppercase whitespace-nowrap flex-shrink-0" id="telemetry-name" data-value="SAMUEL LÓPEZ GÓMEZ">SAMUEL LÓPEZ GÓMEZ</h1>
+                    </div>
+                    <div class="text-[9px] md:text-xs text-gray-400 font-mono tracking-widest mt-1 whitespace-nowrap flex items-center gap-2">
+                        <span class="text-ctosBlue font-cyber font-bold tracking-wider">ALIAS: [smrunner]</span>
+                        <span class="text-gray-600">|</span>
+                        <span>CNO IV // PERIODO: AGOSTO - DICIEMBRE 2026 // UPSLP</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex flex-nowrap items-center justify-start xl:ml-auto gap-3 md:gap-4 text-[10px] md:text-xs font-mono uppercase tracking-widest w-full xl:w-auto max-w-full overflow-x-auto whitespace-nowrap pb-1 xl:pb-0 scrollbar-hide">
+                <a href="index.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> INICIO</a>
+                <a href="Parcial1.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_1</a>
+                <a href="Parcial2.html" class="text-white hover:text-ctosBlue transition-colors flex-shrink-0">> PARCIAL_2</a>
+                <a href="Parcial3.html" class="text-ctosBlue font-bold drop-shadow-[0_0_5px_rgba(0,168,255,0.8)] flex-shrink-0">> PARCIAL_3</a>
+                <a href="javascript:void(0);" class="text-gray-600 hover:text-red-500 transition-colors cursor-not-allowed flex-shrink-0" title="Pendiente de Carga">> CERTIFICACIONES</a>
+                <a href="Roadtohof.html" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0">> ROAD_TO_HOF</a>
+                <a href="index.html#contacto" class="text-gray-400 hover:text-ctosBlue transition-colors flex-shrink-0 pr-4 md:pr-6">> CONTACTO</a>
+                <span class="w-4 md:w-8 flex-shrink-0 inline-block"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto mt-8 mb-10 p-4 md:p-8 relative z-10 scroll-mt-28 flex-grow">
+        
+        <!-- Botón de regreso -->
+        <div class="mb-6">
+            <a href="Parcial3.html" class="inline-flex items-center gap-2 border border-ctosBlue text-ctosBlue font-bold px-4 py-2 uppercase text-xs hover:bg-ctosBlue hover:text-black transition-colors cursor-crosshair">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                [ REGRESAR_AL_DIRECTORIO_P3 ]
+            </a>
+        </div>
+
+        <div class="bg-ctosGray backdrop-blur-md border border-white/10 p-6 md:p-10 pt-12 md:pt-10 hud-corners shadow-2xl flex flex-col gap-8 relative">
+
+            <!-- ETIQUETA SUPERIOR -->
+            <div class="absolute top-0 right-0 bg-blue-900/40 border-l border-b border-blue-500/50 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-blue-400 tracking-widest animate-pulse">
+                FORENSIC_DOSSIER
+            </div>
+
+            <!-- TÍTULO PRINCIPAL Y METADATA -->
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-ctosBlue/30 pb-6 mb-2">
+                <div class="flex items-start gap-4">
+                    <svg class="w-10 h-10 text-blue-500 animate-pulse flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-cyber font-bold text-white uppercase tracking-widest leading-tight">Actividad 18: La huella digital de un cibercriminal</h2>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-blue-900/40 text-blue-400 border border-blue-500/50">AUTOPSY 4.23.1</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-emerald-900/40 text-emerald-400 border border-emerald-500/50">DISK IMAGE FORENSICS</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-ctosBlue/20 text-ctosBlue border border-ctosBlue/50">HACKING CASE (NIST)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BARRA DE DESCARGA -->
+            <div class="border border-ctosBlue/50 bg-ctosBlue/10 p-5 relative group flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_15px_rgba(0,168,255,0.1)]">
+                <div class="absolute top-0 right-0 bg-ctosBlue text-black px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest">
+                    ATTACHMENT_FOUND
+                </div>
+                <div class="flex items-center gap-4 w-full md:w-auto mt-2 md:mt-0">
+                    <div class="text-ctosBlue flex-shrink-0">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-cyber font-bold uppercase tracking-widest text-base">Reporte Original</h4>
+                        <p class="text-gray-400 font-mono text-[10px] md:text-xs mt-1">Documentación técnica de la extracción de evidencia // Extensión: .pdf</p>
+                    </div>
+                </div>
+                <a href="Actividad18.pdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 border border-ctosBlue text-ctosBlue font-cyber font-bold px-4 py-2.5 text-[10px] md:text-xs uppercase tracking-widest hover:bg-ctosBlue hover:text-black transition-all duration-300 w-full md:w-auto cursor-crosshair flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    [ ABRIR_ARCHIVO ]
+                </a>
+            </div>
+
+            <!-- INTRODUCCIÓN Y OBJETIVOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Contexto e Hipótesis -->
+                <section class="border border-white/10 bg-black/60 p-6 relative flex flex-col">
+                    <div class="absolute top-0 right-0 bg-white/5 border-l border-b border-white/20 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-gray-400">CONTEXT & INTELLIGENCE</div>
+                    <h3 class="text-sm font-bold text-ctosBlue uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Antecedentes del "Hacking Case"
+                    </h3>
+                    <p class="text-sm leading-relaxed text-gray-300 font-mono flex-grow text-justify">
+                        <!--[cite: 49, 50] -->El caso (CFREDS del NIST) parte de la detención de Greg Schardt, alias "Mr. Evil", sospechoso de fraude de tarjetas (carding) y de interceptar tráfico de redes inalámbricas mediante "wardriving". El 20/09/2004 se incautó una laptop Dell abandonada junto a una antena 802.11b casera. La evidencia se entregó como una imagen forense fragmentada en 8 partes (SCHARDT.001 a .008).
+                    </p>
+                </section>
+                <!-- Objetivo de la Práctica -->
+                <section class="border border-blue-500/30 bg-blue-900/10 p-6 relative flex flex-col shadow-[0_0_15px_rgba(59,130,246,0.05)]">
+                    <div class="absolute top-0 right-0 bg-blue-500/20 border-l border-b border-blue-500/50 px-2 py-0.5 font-cyber text-[10px] font-bold tracking-widest text-blue-400">MISSION_GOAL</div>
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        Objetivo Forense
+                    </h3>
+                    <p class="text-sm leading-relaxed text-blue-100/80 font-mono flex-grow text-justify">
+                        <!--[cite: 50] -->Configurar e importar la imagen en <code class="font-bold text-blue-400">Autopsy</code>, validando su integridad mediante el cálculo del Hash MD5. El objetivo es identificar los detalles del sistema, las cuentas de usuario, fechas críticas del sistema operativo y correlacionar la presencia y ejecución de herramientas de hacking (sniffers, recuperadores de contraseñas) encontradas en el registro y en el Prefetch.
+                    </p>
+                </section>
+            </div>
+
+            <!-- MATRIZ DE RESPUESTAS FORENSES -->
+            <section class="border border-white/5 bg-black/40 p-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-blue-900/40 border-l border-b border-blue-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-blue-400 tracking-widest">
+                    FORENSIC_MATRIX
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-white/10 pb-3 mb-6 pr-24">
+                    Extracción de Evidencia Fundamental
+                </h3>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs md:text-sm border border-white/10">
+                        <thead>
+                            <tr class="border-b border-white/10 text-gray-400 bg-white/5 font-cyber tracking-widest uppercase">
+                                <th class="p-3 w-2/5">Punto de Investigación</th>
+                                <th class="p-3 w-2/5">Respuesta / Dato Extraído</th>
+                                <th class="p-3 w-1/5">Fuente en Autopsy</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 font-mono text-gray-300">
+                            <!--[cite: 49, 83, 84, 85, 86] -->
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Hash MD5 y Verificación de Integridad</td>
+                                <td class="p-3 text-ctosBlue font-bold align-top">aee4fcd9301c03b3b054623ca261959a<br><span class="text-emerald-400 text-xs">Sí coincide con el original de NIST</span></td>
+                                <td class="p-3 text-gray-400 align-top">Data Sources Summary (Container)</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Sistema Operativo</td>
+                                <td class="p-3 text-ctosBlue align-top">Microsoft Windows XP</td>
+                                <td class="p-3 text-gray-400 align-top">Operating System Information</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Fecha de Instalación (InstallDate)</td>
+                                <td class="p-3 text-ctosBlue align-top">19/08/2004, 5:48:27 PM CDT (22:48:27 UTC)</td>
+                                <td class="p-3 text-gray-400 align-top">Hive: software\...\CurrentVersion</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Zona Horaria Configurada</td>
+                                <td class="p-3 text-ctosBlue align-top">Central Standard Time (UTC-6) / Verano (UTC-5)</td>
+                                <td class="p-3 text-gray-400 align-top">Hive: system\...\TimeZoneInformation</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Propietario Registrado</td>
+                                <td class="p-3 text-amber-400 font-bold align-top">Greg Schardt</td>
+                                <td class="p-3 text-gray-400 align-top">Hive: software\...\CurrentVersion</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Nombre del Equipo (ComputerName)</td>
+                                <td class="p-3 text-ctosBlue align-top">N-1A9ODN6ZXK4LQ</td>
+                                <td class="p-3 text-gray-400 align-top">Operating System Information</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Dominio Principal</td>
+                                <td class="p-3 text-ctosBlue align-top">N-1A9ODN6ZXK4LQ (Sin dominio corporativo)</td>
+                                <td class="p-3 text-gray-400 align-top">Hive: software\...\Winlogon</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Fecha y Hora de Último Apagado</td>
+                                <td class="p-3 text-ctosBlue align-top">27/08/2004, 10:46:33 AM CDT (15:46:33 UTC)</td>
+                                <td class="p-3 text-gray-400 align-top">Hive: system\...\Windows (Shutdown Time)</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white align-top">Cuentas Locales Registradas (SAM)</td>
+                                <td class="p-3 align-top">
+                                    5 Cuentas: Administrator, Guest, HelpAssistant, SUPPORT_388945a0, <strong class="text-amber-400">Mr. Evil</strong>
+                                </td>
+                                <td class="p-3 text-gray-400 align-top">Hive: SAM\Domains\Account\Users\Names</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ANÁLISIS DE SOFTWARE MALICIOSO -->
+            <section class="border border-red-500/30 bg-black/40 p-6 relative mt-4 shadow-[0_0_15px_rgba(239,68,68,0.05)]">
+                <div class="absolute top-0 right-0 bg-red-900/40 border-l border-b border-red-500/50 px-3 py-1 font-cyber text-[10px] font-bold text-red-400 tracking-widest">
+                    MALWARE_&_TOOLS
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-white/10 pb-3 mb-6 pr-24">
+                    Herramientas Sospechosas y Piratería
+                </h3>
+
+                <p class="text-sm font-mono text-gray-300 mb-6">
+                    <!--[cite: 86, 87] -->El análisis de los registros de instalación (Program Files) y de ejecución (archivos Prefetch) demostró la presencia y el uso de múltiples herramientas asociadas a "wardriving", intercepción de red y robo de credenciales. La mayoría fueron instaladas o ejecutadas poco antes del último apagado.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-sm text-gray-300">
+                    <div class="bg-[#050505] border border-white/10 p-4 hover:border-red-500/50 transition-colors">
+                        <span class="text-red-400 font-bold block mb-1">Network Stumbler 0.4.0</span>
+                        <p class="text-xs text-gray-400">Herramienta para localizar redes inalámbricas (Wardriving). Ejecutada el 27/08/2004 a las 10:12:35.</p>
+                    </div>
+                    <div class="bg-[#050505] border border-white/10 p-4 hover:border-red-500/50 transition-colors">
+                        <span class="text-red-400 font-bold block mb-1">WinPcap & Ethereal 0.10.6</span>
+                        <p class="text-xs text-gray-400">Controlador y analizador para capturar e interceptar tráfico de red. Ethereal se ejecutó el 27/08/2004 a las 10:34:54.</p>
+                    </div>
+                    <div class="bg-[#050505] border border-white/10 p-4 hover:border-red-500/50 transition-colors">
+                        <span class="text-red-400 font-bold block mb-1">Cain & Abel 2.5 beta45</span>
+                        <p class="text-xs text-gray-400">Software para captura de credenciales (sniffing) y descifrado de contraseñas. Ejecutado dos veces el 27/08/2004.</p>
+                    </div>
+                    <div class="bg-[#050505] border border-white/10 p-4 hover:border-red-500/50 transition-colors">
+                        <span class="text-amber-400 font-bold block mb-1">Anonymizer Bar & 123 Write All Passwords</span>
+                        <p class="text-xs text-gray-400">Herramientas orientadas a la evasión de rastreo (navegación anónima) y robo de passwords almacenados locales.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LÍNEA DE TIEMPO DEL ANÁLISIS (PROCEDIMIENTO CON TODAS LAS CAPTURAS) -->
+            <section class="border border-white/5 bg-black/40 p-6 pt-10 md:pt-6 relative mt-4">
+                <div class="absolute top-0 right-0 bg-ctosBlue/10 border-l border-b border-ctosBlue/40 px-3 py-1 font-cyber text-[10px] md:text-xs font-bold text-ctosBlue tracking-widest animate-pulse">
+                    OPERATION_LOG
+                </div>
+                <h3 class="text-xl md:text-2xl font-cyber font-bold text-white uppercase tracking-widest border-b border-ctosBlue/30 pb-3 mb-8 pr-24">
+                    Procedimiento Forense de Autopsy (48 Evidencias)
+                </h3>
+                
+                <div class="relative pl-6 sm:pl-8 border-l-2 border-ctosBlue/20 space-y-12 font-mono text-sm text-gray-300">
+                    
+                    <!-- FASE A: PREPARACIÓN E IMPORTACIÓN -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-gray-400 rounded-full flex items-center justify-center font-bold text-gray-400 text-[10px]">A</div>
+                        <h4 class="font-bold text-gray-300 uppercase text-sm mb-4 border-b border-gray-600/30 pb-2">Fase A. Preparación y Creación del Caso</h4>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">1</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Reunificación de la Evidencia Original (Paso 0)</h4>
+                        <p class="mb-3"><!--[cite: 51] -->Se agruparon las ocho partes de la imagen Raw (SCHARDT.001 al .008) descargadas del NIST en una carpeta limpia (EVIDENCE) para asegurar que Autopsy pudiera concatenarlas al momento de cargarlas.</p>
+                        <div class="bg-black/80 border border-white/20 p-2 max-w-2xl">
+                            <!-- 0.png -->
+                            <img src="Imagenes/Laboratorios/Act18/1.png" alt="Carpeta con las partes de la imagen" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-ctosBlue rounded-full flex items-center justify-center font-bold text-ctosBlue text-[10px] shadow-[0_0_10px_rgba(0,168,255,0.8)]">2</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Creación del Caso y Organización (Pasos 1-7)</h4>
+                        <p class="mb-3"><!--[cite: 51, 52, 53, 54, 55] -->En Autopsy se inició un <code class="text-ctosBlue">New Case</code>. Se estableció el nombre <code class="font-bold">INV01UPSLP</code>, se agregaron los datos opcionales de la investigación y se creó el perfil organizacional ("Universidad Politécnica de San Luis Potosí") para mantener la cadena de custodia.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 max-w-5xl">
+                            <!-- 1.png a 7.png -->
+                            <div class="bg-black/80 border border-white/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/2.png" alt="Directorio Base" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-white/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/3.png" alt="Optional Info" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-white/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/4.png" alt="Manage Org 1" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-white/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/5.png" alt="Manage Org 2" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-white/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/6.png" alt="Manage Org 3" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-white/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/7.png" alt="Select Org" class="w-full h-auto border border-white/10 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FASE B: IMPORTACIÓN E INGESTA -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px]">B</div>
+                        <h4 class="font-bold text-amber-400 uppercase text-sm mb-4 border-b border-amber-500/30 pb-2">Fase B. Importación e Ingesta Forense</h4>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">3</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Asignación del Origen de Datos (Pasos 8-10)</h4>
+                        <p class="mb-3"><!--[cite: 55, 56, 57] -->Se generó un nuevo host y se agregó la fuente de datos seleccionando <code class="text-amber-400">Disk Image or VM File</code>. Se apuntó el path al primer archivo (SCHARDT.001) y se especificó la zona horaria America/Chicago (correspondiente a CDT) que es la que usaba el objetivo.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 max-w-5xl">
+                            <!-- 8.png a 10.png -->
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/8.png" alt="Select Host" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/9.png" alt="Select Data Source Type" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/10.png" alt="Select Data Source File" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">4</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Configuración y Fallo de Ingesta Inicial (Pasos 11-14)</h4>
+                        <p class="mb-3"><!--[cite: 58, 59] -->Al configurar los Ingest Modules, se habilitaron todos. Durante el proceso, el sistema arrojó un error debido a que el escáner de malware Cyber Triage carecía de licencia comercial instalada, cancelando el proceso. Se finalizó el asistente conservando la imagen montada.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2 max-w-6xl">
+                            <!-- 11.png a 14.png -->
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/11.png" alt="Configure Ingest" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/12.png" alt="Add Data Source Progress" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/13.png" alt="Ingest Module Failure" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/14.png" alt="Finish Setup" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-amber-500 rounded-full flex items-center justify-center font-bold text-amber-500 text-[10px] shadow-[0_0_10px_rgba(245,158,11,0.8)]">5</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Reanudación y Visualización de Volúmenes (Pasos 15-19)</h4>
+                        <p class="mb-3"><!--[cite: 60, 61, 62] -->Se ejecutó <code class="text-amber-400">Run Ingest Modules</code> nuevamente excluyendo el escáner problemático. Tras esperar a que finalizara el análisis en la barra inferior, la vista mostró que la imagen contenía tres volúmenes, siendo <code class="font-bold">vol2 (NTFS)</code> la partición principal de Windows XP.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 max-w-5xl">
+                            <!-- 15.png a 19.png -->
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/15.png" alt="Árbol del caso host" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/16.png" alt="Run Ingest Modules Menu" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/17.png" alt="Ingest Without Cyber Triage" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/18.png" alt="Ingest Progress Bar" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-amber-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/19.png" alt="Volumes and Partitions" class="w-full h-auto border border-amber-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FASE C: IDENTIFICACIÓN DEL SISTEMA -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-blue-500 rounded-full flex items-center justify-center font-bold text-blue-500 text-[10px]">C</div>
+                        <h4 class="font-bold text-blue-400 uppercase text-sm mb-4 border-b border-blue-500/30 pb-2">Fase C. Resumen y Verificación de Integridad</h4>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-blue-500 rounded-full flex items-center justify-center font-bold text-blue-500 text-[10px] shadow-[0_0_10px_rgba(59,130,246,0.8)]">6</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Identificación de OS y Hash MD5 (Pasos 20-23)</h4>
+                        <p class="mb-3"><!--[cite: 63, 64, 65] -->En <code class="text-blue-400">Data Sources Summary</code> se comprobó que el OS era Windows XP y se validó el Hash MD5 en la pestaña Container. Posteriormente, el apartado <code class="text-blue-400">Operating System Information</code> confirmó el nombre del equipo (N-1A9ODN6ZXK4LQ) y el propietario base (Greg Schardt).</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 max-w-4xl">
+                            <!-- 20.png a 23.png -->
+                            <div class="bg-black/80 border border-blue-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/20.png" alt="OS and File Types" class="w-full h-auto border border-blue-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-blue-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/21.png" alt="MD5 Hash Verification" class="w-full h-auto border border-blue-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-blue-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/22.png" alt="Operating System Info view" class="w-full h-auto border border-blue-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-blue-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/23.png" alt="OS Info Data Artifacts" class="w-full h-auto border border-blue-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FASE D: REGISTRO DE WINDOWS -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-fuchsia-500 rounded-full flex items-center justify-center font-bold text-fuchsia-500 text-[10px]">D</div>
+                        <h4 class="font-bold text-fuchsia-400 uppercase text-sm mb-4 border-b border-fuchsia-500/30 pb-2">Fase D. Análisis del Registro de Windows (Hives)</h4>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-fuchsia-500 rounded-full flex items-center justify-center font-bold text-fuchsia-500 text-[10px] shadow-[0_0_10px_rgba(217,70,239,0.8)]">7</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Análisis de la Colmena SOFTWARE (Pasos 24-29)</h4>
+                        <p class="mb-3"><!--[cite: 65, 66, 67, 68] -->Navegando a <code class="text-fuchsia-400">WINDOWS\system32\config</code>, se abrió el archivo <strong>software</strong> en el visor de registros. Se localizó la clave <code class="text-fuchsia-400">CurrentVersion</code> para determinar la fecha de instalación (InstallDate), y la llave <code class="text-fuchsia-400">Winlogon</code> que demostró que el equipo no estaba unido a un dominio (DefaultDomainName igual al nombre del host).</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 max-w-5xl">
+                            <!-- 24.png a 29.png -->
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/24.png" alt="Windows Folder" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/25.png" alt="Config Folder Hives" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/26.png" alt="Software Hive Viewer" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/27.png" alt="CurrentVersion Key" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/28.png" alt="InstallDate & Owner" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/29.png" alt="Winlogon Domain" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-fuchsia-500 rounded-full flex items-center justify-center font-bold text-fuchsia-500 text-[10px] shadow-[0_0_10px_rgba(217,70,239,0.8)]">8</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Análisis de Colmenas SYSTEM y SAM (Pasos 30-35)</h4>
+                        <p class="mb-3"><!--[cite: 69, 70, 71, 72, 73, 74] -->Abriendo la colmena <strong>system</strong> se identificó la zona horaria (<code class="text-fuchsia-400">TimeZoneInformation</code>) y el tiempo del último apagado (<code class="text-fuchsia-400">Shutdown Time</code>). Luego, cruzando el visor de cuentas (OS Accounts) de Autopsy con la colmena <strong>SAM</strong> de forma directa, se corroboró la existencia de 5 cuentas, destacando <code class="font-bold text-fuchsia-400">Mr. Evil</code> como la única cuenta personal.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 max-w-5xl">
+                            <!-- 30.png a 35.png -->
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/30.png" alt="System Hive" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/31.png" alt="ControlSet001" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/32.png" alt="TimeZone Information" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/33.png" alt="Shutdown Time" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/34.png" alt="OS Accounts View" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-fuchsia-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/35.png" alt="SAM Accounts View" class="w-full h-auto border border-fuchsia-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FASE E: MALWARE Y ARTEFACTOS -->
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-red-500 rounded-full flex items-center justify-center font-bold text-red-500 text-[10px]">E</div>
+                        <h4 class="font-bold text-red-400 uppercase text-sm mb-4 border-b border-red-500/30 pb-2">Fase E. Actividad Maliciosa (Software & Artefactos)</h4>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-red-500 rounded-full flex items-center justify-center font-bold text-red-500 text-[10px] shadow-[0_0_10px_rgba(239,68,68,0.8)]">9</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Programas Instalados y Ejecutados (Pasos 36-39)</h4>
+                        <p class="mb-3"><!--[cite: 74, 75, 76, 77] -->En <code class="text-red-400">Installed Programs</code> se identificaron herramientas de intercepción y cracking (Cain, Ethereal, NetStumbler). Para comprobar su uso activo, se analizó exhaustivamente <code class="text-red-400">Run Programs</code> (datos extraídos del Prefetch). Se confirmó que dichas herramientas corrieron repetidamente el día 27 de agosto, justo antes del apagado final.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 max-w-4xl">
+                            <!-- 36.png a 39.png -->
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/36.png" alt="Installed Programs" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/37.png" alt="Run Programs 1" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/38.png" alt="Run Programs 2" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/39.png" alt="Run Programs 3" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-red-500 rounded-full flex items-center justify-center font-bold text-red-500 text-[10px] shadow-[0_0_10px_rgba(239,68,68,0.8)]">10</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Validación en Sistema de Archivos Físico (Pasos 40-43)</h4>
+                        <p class="mb-3"><!--[cite: 78, 79, 80] -->Para confirmar las fechas, se exploró directamente el disco en la ruta <code class="text-red-400">Program Files</code> y la carpeta real <code class="text-red-400">WINDOWS\Prefetch</code>, confirmando 84 archivos .pf que coinciden temporal y lógicamente con los registros del sistema.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 max-w-4xl">
+                            <!-- 40.png a 43.png -->
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/40.png" alt="Program Files Folder" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/41.png" alt="Prefetch Folder 1" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/42.png" alt="Prefetch Folder 2" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/43.png" alt="Prefetch Folder 3" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="absolute -left-[30px] sm:-left-[39px] top-0 w-6 h-6 bg-[#050505] border-2 border-red-500 rounded-full flex items-center justify-center font-bold text-red-500 text-[10px] shadow-[0_0_10px_rgba(239,68,68,0.8)]">11</div>
+                        <h4 class="font-bold text-white uppercase text-base mb-2">Escritorio, Papelera e Historial Web (Pasos 44-47)</h4>
+                        <p class="mb-3"><!--[cite: 81, 82] -->Se auditó la papelera (<code class="font-bold">RECYCLER</code>) detectando alteraciones 16 minutos antes del apagado. En <code class="text-red-400">Desktop\Tools</code> se hallaron los instaladores descargados por Mr. Evil, y finalmente, <code class="text-red-400">Web History</code> corroboró visitas a sitios de wardriving, páginas de hackeo (2600.com) y descargas directas de los sniffers instalados.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 max-w-4xl">
+                            <!-- 44.png a 47.png -->
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/44.png" alt="Recycler folder" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/45.png" alt="Mr Evil Desktop Tools" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/46.png" alt="Mr Evil Documents" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                            <div class="bg-black/80 border border-red-500/20 p-2">
+                                <img src="Imagenes/Laboratorios/Act18/47.png" alt="Web History Analysis" class="w-full h-auto border border-red-500/30 zoomable-img" onclick="openImageModal(this.src)">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Línea de Tiempo Resumen -->
+                    <div class="border border-red-500/50 bg-red-900/10 p-5 mt-4">
+                        <h5 class="text-red-400 font-bold mb-2 uppercase text-xs">> Línea de Tiempo de Interceptación Crítica (27/08/2004)</h5>
+                        <ul class="text-xs text-gray-300 font-mono space-y-1">
+                            <!--[cite: 88, 89] -->
+                            <li><span class="text-white">10:12 AM:</span> Se instala y ejecuta Network Stumbler.</li>
+                            <li><span class="text-white">10:15 AM:</span> Se instala el driver WinPcap (controlador de captura).</li>
+                            <li><span class="text-white">10:28 AM:</span> Se instala Ethereal (analizador de red).</li>
+                            <li><span class="text-white">10:29 AM:</span> Modificación sospechosa de la papelera RECYCLER.</li>
+                            <li><span class="text-white">10:33 AM:</span> Se ejecuta Caín & Abel (2 veces) para recuperar passwords.</li>
+                            <li><span class="text-white">10:46:17 AM:</span> Última ejecución de LOGONUI (Cierre de Sesión).</li>
+                            <li><span class="text-red-400 font-bold">10:46:33 AM:</span> Apagado Final (Shutdown Time).</li>
+                        </ul>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-xs text-gray-500 font-cyber tracking-widest uppercase relative z-10 bg-black/90 border-t border-ctosBlue/30 w-full">
+        <p>ctOS v2.0 // &copy; 2026 Samuel López Gómez/All rights reserved.</p>
+        <p class="mt-2 text-white">RED DE VIGILANCIA COMPROMETIDA // CNO IV – Seguridad Informática</p>
+    </footer>
+
+    <!-- MODAL PARA AMPLIAR IMÁGENES -->
+    <div id="image-modal" class="fixed inset-0 z-[40000] bg-black/95 backdrop-blur-md hidden flex-col justify-center items-center p-4 transition-opacity duration-300 opacity-0" onclick="closeImageModal()">
+        <button onclick="closeImageModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors outline-none font-cyber font-bold text-2xl hover:scale-110">
+            [X]
+        </button>
+        <img id="modal-img-src" src="" alt="Captura Ampliada" class="max-w-full max-h-full border-2 border-ctosBlue shadow-[0_0_30px_rgba(0,168,255,0.4)]" onclick="event.stopPropagation()">
+        <p class="text-ctosBlue font-mono text-xs mt-4 tracking-widest">> Clickea en cualquier parte para cerrar <</p>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // Modal de Imágenes
+        const imageModal = document.getElementById('image-modal');
+        const modalImgSrc = document.getElementById('modal-img-src');
+
+        function openImageModal(src) {
+            modalImgSrc.src = src;
+            imageModal.classList.remove('hidden');
+            imageModal.classList.add('flex');
+            setTimeout(() => { imageModal.classList.remove('opacity-0'); }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            imageModal.classList.add('opacity-0');
+            setTimeout(() => {
+                imageModal.classList.add('hidden');
+                imageModal.classList.remove('flex');
+                modalImgSrc.src = "";
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Efecto Telemetría Header
+        const nameElement = document.getElementById('telemetry-name');
+        if (nameElement) {
+            const originalText = nameElement.getAttribute('data-value');
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>";
+            function runTelemetryEffect() {
+                let iteration = 0;
+                clearInterval(nameElement.interval);
+                nameElement.interval = setInterval(() => {
+                    nameElement.innerText = originalText.split("").map((letter, index) => {
+                        if (letter === " ") return " ";
+                        if (index < iteration) return originalText[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join("");
+                    if (iteration >= originalText.length) {
+                        clearInterval(nameElement.interval);
+                        setTimeout(runTelemetryEffect, 4000);
+                    }
+                    iteration += 1 / 3;
+                }, 30);
+            }
+            runTelemetryEffect();
+        }
+
+        // Script Matrix Azul
+        const canvas = document.getElementById('matrix-bg');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const charArray = "010101100100101ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+            const fontSize = 16;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+
+            for (let x = 0; x < columns; x++) { drops[x] = Math.random() * -100; }
+
+            function drawMatrix() {
+                ctx.fillStyle = 'rgba(5, 5, 7, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#00a8ff';
+                ctx.font = fontSize + 'px "Fira Code", monospace';
+
+                for (let i = 0; i < drops.length; i++) {
+                    ctx.fillText(charArray[Math.floor(Math.random() * charArray.length)], i * fontSize, drops[i] * fontSize);
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }
+            setInterval(drawMatrix, 33);
+            window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        }
+    </script>
+</body>
+</html>
